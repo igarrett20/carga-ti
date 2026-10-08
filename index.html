@@ -421,6 +421,23 @@ tr.done td.title{font-weight:500}
 .psub{display:block;font-size:12px;color:var(--brand);font-weight:600}
 .auto{font-size:10.5px;font-weight:700;color:var(--muted);border:1px dashed var(--line-strong);border-radius:4px;padding:0 4px;margin-left:4px}
 .loose{font-size:13.5px;color:var(--muted);margin:4px 0 0}
+.proj h3 button{all:unset;cursor:pointer}.proj h3 button:hover{color:var(--brand);text-decoration:underline}
+.back{appearance:none;border:0;background:none;color:var(--brand);font-weight:600;cursor:pointer;padding:0;margin:0 0 12px;font-size:14px}
+.pd-h{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start;margin-bottom:16px}
+.pd-h h2{font-size:22px;letter-spacing:-.01em}
+.pd-h .sub{font-size:13.5px;color:var(--muted);margin-top:2px}
+.stat small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.rows{display:grid;gap:8px}
+.trow{display:grid;grid-template-columns:22px minmax(0,1fr) auto 150px 30px;gap:8px;align-items:center}
+.trow .n{font-size:12px;font-weight:700;color:var(--muted);text-align:right}
+.trow input{font:inherit;color:var(--ink);background:#fff;border:1px solid var(--line-strong);border-radius:8px;padding:8px 10px;width:100%}
+.trow .seg button{padding:6px 10px}
+.trow .rh{display:flex;align-items:center;gap:6px}
+.trow .rh input{width:74px}
+.trow .ra{font-size:12px;color:var(--muted);white-space:nowrap}
+.trow .x{appearance:none;border:1px solid var(--line);background:#fff;border-radius:8px;width:30px;height:34px;cursor:pointer;color:var(--muted);font-size:17px}
+.rows-f{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:4px}
+@media (max-width:720px){.trow{grid-template-columns:22px minmax(0,1fr) 30px}.trow .seg,.trow .rh{grid-column:2/3}}
 @media (max-width:720px){.kv5{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:860px){
   .cols2,.fgrid,.choice{grid-template-columns:1fr}
@@ -555,11 +572,11 @@ const ALL_MAILS = () => [...CONFIG.approvers, ...CONFIG.it].map(p => p.email);
 const APPR_MAILS = () => CONFIG.approvers.map(p => p.email);
 
 /* ---------- Estado ---------- */
-// tarea: {id, devops, type, title, who, prio, effort (0 = automática), ext, worked, runFrom(ms|null), status, created(ms), closed(ms|null), obs, delivery(k), delivered(k), req, project(id|null)}
+// tarea: {id, devops, type, title, who, prio, effort (0 = automática), ext, worked, runFrom(ms|null), status, created(ms), started(ms|null), closed(ms|null), obs, delivery(k), delivered(k), req, project(id|null)}
 // proyecto: mismos campos, con type = PROJ; effort = horas estimadas del proyecto
 // extensión: {id, taskId, who, hours, motivo, explic, pend, newDate, status:'Pendiente'|'Aprobada', approvedHours, approvedBy, approvedAt, comment, created}
 let S = { tasks: [], projects: [], exts: [], meet: [], vac: [], hol: { ...DEFAULT_HOL } };
-const V = { me: null, tab: null, week: 0, filter: 'open', pfilter: 'open', rep: null, modal: null, draft: null, alarmStep: 'ask', alarmFor: null, confirm: null, busy: false };
+const V = { me: null, tab: null, week: 0, filter: 'open', pfilter: 'open', proj: null, rep: null, modal: null, draft: null, alarmStep: 'ask', alarmFor: null, confirm: null, busy: false };
 
 /* ---------- Disponibilidad ---------- */
 const isBiz = k => !isWk(k) && !S.hol[k];
@@ -630,10 +647,7 @@ const running = p => S.tasks.find(t => t.who === p && t.status === 'En curso');
 // redondeadas a media hora; la última ajusta para que la suma cuadre. Al empezar una tarea sus horas se congelan.
 const projOf = t => t && t.project ? S.projects.find(p => p.id === t.project) || null : null;
 const tasksOf = pid => S.tasks.filter(t => t.project === pid);
-function allocate(pid, draft) {
-  const pr = S.projects.find(p => p.id === pid), budget = pr ? +pr.effort || 0 : 0;
-  let ts = tasksOf(pid).filter(t => !draft || t.id !== draft.id);
-  if (draft) ts = ts.concat([draft]);
+function split(budget, ts) {                      // ts: [{id, effort (0 = automática), created}]
   const fixed = ts.filter(t => +t.effort > 0).reduce((a, t) => a + +t.effort, 0);
   const autos = ts.filter(t => !(+t.effort > 0)).sort((a, b) => (a.created || 0) - (b.created || 0));
   const left = budget - fixed, n = autos.length, out = {};
@@ -642,6 +656,12 @@ function allocate(pid, draft) {
     autos.forEach((t, i) => { out[t.id] = i < n - 1 ? base : Math.max(0.5, Math.round((left - base * (n - 1)) * 2) / 2); }); }
   const planned = fixed + Object.values(out).reduce((a, v) => a + v, 0);
   return { out, budget, fixed, left, n, base, planned, over: Math.max(0, planned - budget) };
+}
+function allocate(pid, draft) {
+  const pr = S.projects.find(p => p.id === pid);
+  let ts = tasksOf(pid).filter(t => !draft || t.id !== draft.id);
+  if (draft) ts = ts.concat([draft]);
+  return split(pr ? +pr.effort || 0 : 0, ts);
 }
 const realloc = () => { ALLOC = {}; S.projects.forEach(p => Object.assign(ALLOC, allocate(p.id).out)); };
 const autoHours = d => allocate(d.project, { id: d.id || -1, effort: 0, created: d.created || nowMs() }).out[d.id || -1] || 0;
@@ -714,10 +734,10 @@ async function allItems(list) {
 }
 const T_OUT = t => ({ Title: t.title, DevOpsId: t.devops ? +t.devops : null, Tipo: t.type, Asignado: person(t.who).email, Estado: t.status, Prioridad: t.prio,
   HorasEsfuerzo: +t.effort > 0 ? +t.effort : null, ProyectoId: t.project || null, HorasExtension: +t.ext || 0, HorasTrabajadas: Math.round((+t.worked || 0) * 1000) / 1000, SesionInicio: t.runFrom ? new Date(t.runFrom).toISOString() : '',
-  FechaEntrega: wd(t.delivery), FechaEntregada: wd(t.delivered), FechaCierre: t.closed ? new Date(t.closed).toISOString() : null, Observaciones: t.obs || '', SolicitadoPor: t.req || '' });
+  FechaEntrega: wd(t.delivery), FechaEntregada: wd(t.delivered), FechaCierre: t.closed ? new Date(t.closed).toISOString() : null, FechaInicio: t.started ? new Date(t.started).toISOString() : null, Observaciones: t.obs || '', SolicitadoPor: t.req || '' });
 const T_IN = i => { const f = i.fields; return { id: +i.id, devops: f.DevOpsId || '', type: f.Tipo || 'Task', title: f.Title || '', who: keyByEmail(f.Asignado), status: f.Estado || 'Por empezar', prio: +f.Prioridad || 3,
   effort: +f.HorasEsfuerzo || 0, ext: +f.HorasExtension || 0, worked: +f.HorasTrabajadas || 0, runFrom: f.SesionInicio ? Date.parse(f.SesionInicio) : null,
-  created: Date.parse(i.createdDateTime), closed: f.FechaCierre ? Date.parse(f.FechaCierre) : null, obs: f.Observaciones || '', delivery: rd(f.FechaEntrega), delivered: rd(f.FechaEntregada), req: f.SolicitadoPor || '', project: +f.ProyectoId || null }; };
+  created: Date.parse(i.createdDateTime), closed: f.FechaCierre ? Date.parse(f.FechaCierre) : null, started: f.FechaInicio ? Date.parse(f.FechaInicio) : null, obs: f.Observaciones || '', delivery: rd(f.FechaEntrega), delivered: rd(f.FechaEntregada), req: f.SolicitadoPor || '', project: +f.ProyectoId || null }; };
 const X_OUT = x => ({ Title: x.title || '', TareaId: x.taskId, Asignado: person(x.who).email, HorasSolicitadas: x.hours, Motivo: x.motivo, Explicacion: x.explic, Pendiente: x.pend,
   NuevaFecha: wd(x.newDate), Estado: x.status, HorasAprobadas: x.approvedHours ?? null, AprobadoPor: x.approvedBy || '', FechaAprobacion: x.approvedAt ? new Date(x.approvedAt).toISOString() : null, Comentario: x.comment || '' });
 const X_IN = i => { const f = i.fields; return { id: +i.id, title: f.Title, taskId: +f.TareaId, who: keyByEmail(f.Asignado), hours: +f.HorasSolicitadas || 0, motivo: f.Motivo || '', explic: f.Explicacion || '', pend: f.Pendiente || '',
@@ -815,7 +835,7 @@ const freeze = t => ({ worked: worked(t), runFrom: null });
 async function startTask(t) {
   const cur = running(t.who);
   if (cur && cur.id !== t.id) await DB.setTask(cur.id, { ...freeze(cur), status: remaining(cur) <= 1e-6 ? 'Tiempo agotado' : 'En pausa' });
-  await DB.setTask(t.id, { status: 'En curso', runFrom: nowMs(), ...(isAuto(t) ? { effort: effOf(t) } : {}) });   // al empezar, las horas automáticas se congelan
+  await DB.setTask(t.id, { status: 'En curso', runFrom: nowMs(), ...(t.started ? {} : { started: nowMs() }), ...(isAuto(t) ? { effort: effOf(t) } : {}) });   // al empezar, las horas automáticas se congelan
 }
 async function pauseTask(t) { await DB.setTask(t.id, { ...freeze(t), status: 'En pausa' }); }
 async function finishTask(t) {
@@ -1011,11 +1031,15 @@ function projInfo(p) {
   const ends = open.map(t => (PLANS[t.who] || { finish: {} }).finish[t.id]).filter(Boolean).map(f => f.k).sort();
   const finishK = open.length ? (ends[ends.length - 1] || '') : (done.map(t => t.delivered).filter(Boolean).sort().pop() || '');
   const state = !ts.length ? 'Sin tareas' : !open.length ? 'Completado' : ts.some(t => worked(t) > 0) ? 'En curso' : 'Por empezar';
-  return { ts, done, open, inTasks, ext, wk, est, proj, dev, devPct, xs, finishK, state,
+  const startK = ts.filter(t => t.started).map(t => K(new Date(t.started))).sort()[0] || '';
+  const durDays = startK ? bizDays(startK, state === 'Completado' ? finishK : NOW().k) : 0;
+  return { ts, done, open, inTasks, ext, wk, est, proj, dev, devPct, xs, finishK, state, startK, durDays,
     late: !!(p.delivery && finishK && finishK > p.delivery), pct: ts.length ? Math.round(100 * done.length / ts.length) : 0,
     nExt: xs.filter(x => x.status === 'Aprobada').length, pendX: xs.filter(x => x.status === 'Pendiente').length,
     people: ITK.map(k => [k, ts.filter(t => t.who === k).length]).filter(x => x[1]), alloc: allocate(p.id) };
 }
+const bizDays = (a, b) => { let n = 0; if (!a || !b || b < a) return 0; for (let k = a; k <= b; k = addD(k, 1)) if (isBiz(k)) n++; return n; };
+const daysTxt = n => `${n} día${n === 1 ? '' : 's'} hábil${n === 1 ? '' : 'es'}`;
 const signH = x => (x > 0.004 ? '+' : x < -0.004 ? '−' : '') + hh(Math.abs(x));
 function projectsView() {
   const all = S.projects.map(p => ({ p, i: projInfo(p) })), isDone = x => x.i.state === 'Completado';
@@ -1041,7 +1065,7 @@ function projectsView() {
       : i.ts.length ? 'Sus tareas esperan extensión o no tienen horas' : 'Agregue las tareas para ver el plan';
     const al = i.alloc;
     return `<article class="proj prio${p.prio} ${i.state === 'Completado' ? 'done' : ''}">
-      <div class="ph"><div><h3>${esc(p.title)}</h3><div class="sub">${esc(tid(p))} · Responsable ${esc(person(p.who).name)}${p.req ? ` · Requested by ${esc(p.req)}` : ''} · Creado el ${fS(K(new Date(p.created)))}</div></div>
+      <div class="ph"><div><h3><button data-openp="${p.id}">${esc(p.title)}</button></h3><div class="sub">${esc(tid(p))} · Responsable ${esc(person(p.who).name)}${p.req ? ` · Requested by ${esc(p.req)}` : ''} · Creado el ${fS(K(new Date(p.created)))}</div></div>
         <div class="pr">${prioPill(p.prio)}<span class="tag ${i.state === 'Completado' ? 'good' : i.state === 'En curso' ? '' : 'warn'}">${i.state}</span></div></div>
       <div class="pprog"><span class="track" role="img" aria-label="${i.pct}% de tareas finalizadas"><i style="width:${i.pct}%"></i></span><span><b>${i.done.length} de ${i.ts.length} tareas</b> (${i.pct}%)</span></div>
       <div class="kv5"><div><span>Estimado del proyecto</span><b>${hh(i.est)}</b></div>
@@ -1051,13 +1075,43 @@ function projectsView() {
         <div><span>Desviación</span><b class="${i.dev > 0.004 ? 'red' : i.dev < -0.004 ? 'green' : ''}">${signH(i.dev)}</b><small>${i.est ? `${i.devPct > 0 ? '+' : ''}${i.devPct}% del estimado` : 'sin estimado'}</small></div></div>
       <p class="small muted" style="margin:0">Delivery Date ${p.delivery ? fD(p.delivery) : 'sin fecha'} · ${fin}${i.people.length ? ` · ${i.people.map(([k, c]) => `${k} (${c})`).join(', ')}` : ''}</p>
       ${al.over > 0.004 ? `<div class="preview warn"><span>Las tareas suman ${hh(al.planned)}: ${hh(al.over)} más que el estimado de ${hh(al.budget)}.</span></div>` : ''}
-      ${i.ts.length ? `<details><summary>Ver las ${i.ts.length} tareas</summary><ul class="ptasks">${i.ts.slice().sort((a, b) => isClosed(a) - isClosed(b) || a.created - b.created).map(t => { const st = status(t);
-        return `<li><span class="st ${st.replace(/\s/g, '')}">${st}</span><span class="grow"><b>${esc(t.title)}</b> <span class="muted">· ${esc(t.who)}</span></span><span class="muted nw">${hh(effOf(t))}${isAuto(t) ? '<span class="auto">auto</span>' : ''}${t.ext ? ` + ${hh(t.ext)} ext.` : ''} · trabajadas ${hh(worked(t))}</span></li>`; }).join('')}</ul></details>` : ''}
-      ${canEdit() ? `<div class="pa"><button class="btn" data-addt="${p.id}">+ Agregar tarea</button><button class="lnk" data-editp="${p.id}">Editar proyecto</button></div>` : ''}
+      <div class="pa"><button class="btn primary" data-openp="${p.id}">Ver detalle y tareas</button>${canEdit() ? `<button class="btn" data-addt="${p.id}">+ Agregar tarea</button>` : ''}</div>
     </article>`; }).join('') || `<p class="empty-big"><b>${V.pfilter === 'done' ? 'Todavía no hay proyectos completados' : 'No hay proyectos activos'}</b>${canEdit() && V.pfilter !== 'done' ? 'Use «+ Nuevo proyecto» para crear el primero y luego agréguele sus tareas.' : ''}</p>`;
-  const loose = S.tasks.filter(t => !t.project && !isClosed(t));
-  h += `<p class="loose">Tareas sueltas (sin proyecto): <b>${loose.length}</b> abiertas, ${hh(loose.filter(plannable).reduce((a, t) => a + remaining(t), 0))} pendientes.</p></section>`;
+  h += '</section>' + looseBox();
   return h;
+}
+function looseBox() {                               // tareas de antes que quedaron sin proyecto
+  const loose = S.tasks.filter(t => !t.project && !isClosed(t)); if (!loose.length) return '';
+  return `<div class="box" style="border-color:var(--pend)"><h2>Tareas sin proyecto</h2><p class="small muted" style="margin:0 0 8px">Toda tarea debe ir dentro de un proyecto. Edítelas para asignarles uno.</p>
+    <ul class="ptasks">${loose.map(t => `<li><span class="grow"><b>${esc(t.title)}</b> <span class="muted">· ${esc(t.who)} · ${status(t)}</span></span>${canEdit() ? `<button class="btn" data-edit="${t.id}">Asignar proyecto</button>` : ''}</li>`).join('')}</ul></div>`;
+}
+function projectDetail(p) {
+  const i = projInfo(p), n = NOW();
+  const fin = i.state === 'Completado' ? `<strong>${fD(i.finishK)}</strong><small>terminado${i.late ? ' · tarde' : ''}</small>`
+    : i.finishK ? `<strong>${fD(i.finishK)}</strong><small>según el plan${p.delivery ? (i.late ? ' · no llega' : ' · a tiempo') : ''}</small>` : '<strong>—</strong><small>sin plan todavía</small>';
+  let h = `<button class="back" data-openp="">← Todos los proyectos</button>
+    <div class="pd-h"><div><h2>${esc(p.title)}</h2><div class="sub">${esc(tid(p))} · Responsable ${esc(person(p.who).name)}${p.req ? ` · Requested by ${esc(p.req)}` : ''} · Creado el ${fS(K(new Date(p.created)))} · Delivery Date ${p.delivery ? fL(p.delivery) : 'sin fecha'}</div>
+      ${p.obs ? `<p class="small" style="margin:6px 0 0;white-space:pre-wrap">${esc(p.obs)}</p>` : ''}</div>
+      <div class="pr minirow">${prioPill(p.prio)}<span class="tag ${i.state === 'Completado' ? 'good' : i.state === 'En curso' ? '' : 'warn'}">${i.state}</span>
+        ${canEdit() ? `<button class="btn" data-editp="${p.id}">Editar proyecto</button><button class="btn primary" data-addt="${p.id}">+ Agregar tarea</button>` : ''}</div></div>
+    <div class="stats">
+      <div class="stat"><span>Avance</span><strong>${i.done.length} de ${i.ts.length} tareas</strong><small>${i.pct}% finalizado</small></div>
+      <div class="stat"><span>Estimado → proyectado</span><strong>${hh(i.est)} → ${hh(i.proj)}</strong><small>${signH(i.dev)}${i.est ? ` (${i.devPct > 0 ? '+' : ''}${i.devPct}%)` : ''} · extensiones ${signH(i.ext)}</small></div>
+      <div class="stat"><span>Horas trabajadas</span><strong>${hh(i.wk)}</strong><small>quedan ${hh(Math.max(0, i.proj - i.wk))}</small></div>
+      <div class="stat"><span>Inicio</span><strong>${i.startK ? fD(i.startK) : '—'}</strong><small>${i.startK ? (i.state === 'Completado' ? `duró ${daysTxt(i.durDays)}` : `lleva ${daysTxt(i.durDays)}`) : 'ninguna tarea empezada'}</small></div>
+      <div class="stat"><span>Fin</span>${fin}</div></div>
+    ${i.alloc.over > 0.004 ? `<div class="preview warn" style="margin-bottom:16px"><span>Las tareas suman ${hh(i.alloc.planned)}: ${hh(i.alloc.over)} más que el estimado de ${hh(i.alloc.budget)}.</span></div>` : ''}
+    <section class="sec"><div class="sec-h"><div><h2>Tareas del proyecto</h2><p>Cuánto se estimó, cuánto llevan y cuánto duraron.</p></div></div>
+    <div class="tbl"><table><thead><tr><th>ID</th><th>Tarea</th><th>Responsable</th><th>Estado</th><th class="num">Horas asignadas</th><th class="num">Extensión</th><th class="num">Trabajadas</th><th>Avance</th><th>Inició</th><th>Terminó</th><th>Duración</th><th>Entrega</th>${canEdit() ? '<th></th>' : ''}</tr></thead><tbody>`;
+  h += i.ts.slice().sort((a, b) => isClosed(a) - isClosed(b) || order(a, b)).map(t => {
+    const st = status(t), r = risk(t), xs = S.exts.filter(x => x.taskId === t.id), sK = t.started ? K(new Date(t.started)) : '', cK = t.closed ? K(new Date(t.closed)) : '';
+    const durTxt = sK ? `${isClosed(t) ? '' : 'lleva '}${daysTxt(bizDays(sK, cK || n.k))}` : '—';
+    return `<tr class="${isClosed(t) ? 'done' : ''}"><td class="idc nw">${esc(tid(t))}</td><td class="title">${esc(t.title)}</td><td class="nw">${esc(person(t.who).name)}</td><td><span class="st ${st.replace(/\s/g, '')}">${st}</span></td>
+      <td class="num nw">${num(effOf(t))}${isAuto(t) ? '<span class="auto">auto</span>' : ''}</td><td class="num nw">${t.ext ? `+${num(t.ext)}` : '—'}${xs.length ? ` <span class="muted small">(${xs.length})</span>` : ''}</td><td class="num" data-wn="${t.id}">${num(worked(t))}</td>
+      <td><span class="prog"><span class="track"><i style="width:${pct(t)}%"></i></span>${pct(t)}%</span></td><td class="nw">${sK ? fS(sK) : '—'}</td><td class="nw">${cK ? fS(cK) : '—'}</td><td class="nw">${durTxt}</td>
+      <td>${r.cls ? `<span class="tag ${r.cls}">${r.txt}</span>` : `<span class="muted small">${r.txt}</span>`}</td>${canEdit() ? `<td class="nw">${t.status === 'Por empezar' ? `<button class="lnk" data-edit="${t.id}">Editar</button>` : ''}</td>` : ''}</tr>`; }).join('')
+    || `<tr><td colspan="13" class="muted">Este proyecto todavía no tiene tareas.</td></tr>`;
+  return h + '</tbody></table></div></section>';
 }
 
 /* ---------- Extensiones ---------- */
@@ -1095,15 +1149,15 @@ function addModal() {
   const what = isP ? 'proyecto' : 'tarea';
   const projOpts = S.projects.filter(p => p.id === d.project || projInfo(p).state !== 'Completado').sort((a, b) => a.title.localeCompare(b.title));
   return `<div class="ovl" id="ovl-add"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="add-h"><header><div><h2 id="add-h">${d.id ? `Editar ${what}` : isP ? 'Nuevo proyecto' : 'Agregar tarea'}</h2>
-      <p>${isP ? 'Un proyecto agrupa tareas. Ponga el total de horas que creen que lleva; sus tareas lo reparten.' : 'Created Date y State se llenan solos. El reloj empieza cuando la persona toque «Empezar».'}</p></div><button class="x" data-close aria-label="Cerrar">×</button></header>
+      <p>${isP ? 'Ponga el total de horas que creen que lleva el proyecto y escriba sus tareas; las que queden en «Auto» se reparten las horas.' : 'Created Date y State se llenan solos. El reloj empieza cuando la persona toque «Empezar».'}</p></div><button class="x" data-close aria-label="Cerrar">×</button></header>
     <form class="body" id="addform" novalidate><div class="fgrid">
-      ${d.id ? '' : `<div class="f full"><span>¿Qué quiere agregar?</span><div class="seg" role="radiogroup"><button type="button" role="radio" data-kind="task" aria-checked="${!isP}">Tarea (micro)</button><button type="button" role="radio" data-kind="project" aria-checked="${isP}">Proyecto (macro)</button></div></div>`}
       <label class="f full ${V.err?.title ? 'bad' : ''}"><span>Title</span><input id="a-title" value="${esc(d.title)}" placeholder="${isP ? 'Ej.: Plantillas GEV Autos' : 'Ej.: Plantillas GEV – Día 1'}" autocomplete="off"><span class="err">Escriba el título.</span></label>
-      ${isP ? '' : `<label class="f full"><span>Proyecto</span><select id="a-proj"><option value="">Sin proyecto (tarea suelta)</option>${projOpts.map(p => `<option value="${p.id}" ${d.project === p.id ? 'selected' : ''}>${esc(p.title)} · ${hh(+p.effort || 0)}</option>`).join('')}</select></label>`}
+      ${isP ? '' : `<label class="f full ${V.err?.proj ? 'bad' : ''}"><span>Proyecto</span><select id="a-proj"><option value="">Elija el proyecto…</option>${projOpts.map(p => `<option value="${p.id}" ${d.project === p.id ? 'selected' : ''}>${esc(p.title)} · ${hh(+p.effort || 0)}</option>`).join('')}</select><span class="err">Toda tarea va dentro de un proyecto.</span></label>`}
       <div class="f full"><span>${isP ? 'Responsable del proyecto' : 'Assigned To'}</span><div class="who2" role="radiogroup">${CONFIG.it.map(p => { const q = plan(p.key); const pend = q.q.reduce((a, t) => a + remaining(t), 0);
         return `<button type="button" role="radio" data-who="${p.key}" aria-checked="${d.who === p.key}"><span class="av">${p.key[0]}</span><span><b>${esc(p.name)}</b><small>${hh(pend)} pendientes${running(p.key) ? ' · con una tarea en curso' : ''}</small></span></button>`; }).join('')}</div></div>
       <div class="f full"><span>Priority</span><div class="prios" role="radiogroup">${[1, 2, 3, 4].map(k => `<button type="button" role="radio" class="prio${k}" data-prio="${k}" aria-checked="${d.prio === k}"><b>${PRIOS[k].t}</b><span>${PRIOS[k].d}</span></button>`).join('')}</div></div>
-      ${isP ? `<div class="f full ${V.err?.hours ? 'bad' : ''}"><span>Horas estimadas del proyecto <em>· el total; luego se reparte entre sus tareas</em></span>${hourPicker('a-hours', d.effort)}<span class="err">Indique al menos media hora.</span></div>`
+      ${isP ? `<div class="f full ${V.err?.hours ? 'bad' : ''}"><span>Horas estimadas del proyecto <em>· el total; luego se reparte entre sus tareas</em></span>${hourPicker('a-hours', d.effort)}<span class="err">Indique al menos media hora.</span></div>
+        ${d.id ? '<p class="full small muted" style="margin:0">Las tareas del proyecto se agregan y editan desde su detalle.</p>' : rowsBlock(d)}`
         : `<div class="f full ${V.err?.hours ? 'bad' : ''}"><span>Total Hours (Effort) <em>· cuánto trabajo real lleva, sin contar reuniones</em></span>
           ${withP ? `<div class="seg" role="radiogroup" style="margin-bottom:8px"><button type="button" role="radio" data-auto="1" aria-checked="${auto}">Automático · ${hh(autoHours(d))}</button><button type="button" role="radio" data-auto="0" aria-checked="${!auto}">Elegir horas</button></div>` : ''}
           ${auto ? '' : hourPicker('a-hours', d.effort)}<span class="err">Indique al menos media hora.</span></div>
@@ -1116,8 +1170,28 @@ function addModal() {
       <label class="f"><span>ID de Azure DevOps <em>(opcional)</em></span><input id="a-devops" inputmode="numeric" value="${esc(d.devops)}" placeholder="Ej.: 344"></label>
       <label class="f full"><span>Observaciones</span><textarea id="a-obs" rows="3" placeholder="Contexto, accesos necesarios, contactos…">${esc(d.obs)}</textarea></label>
     </div></form>
-    <footer>${d.id ? `<button class="btn ghost-red" data-del="${d.id}">Eliminar ${what}</button>` : `<span class="small muted">${isP ? 'Aparece en la pestaña Proyectos.' : 'Queda en «Por empezar» de la persona asignada.'}</span>`}<span class="minirow"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="a-save">${d.id ? 'Guardar cambios' : isP ? 'Crear proyecto' : 'Agregar tarea'}</button></span></footer></div></div>`;
+    <footer>${d.id ? `<button class="btn ghost-red" data-del="${d.id}">Eliminar ${what}</button>` : `<span class="small muted">${isP ? 'Las tareas quedan en «Por empezar» de cada persona.' : 'Queda en «Por empezar» de la persona asignada.'}</span>`}<span class="minirow"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="a-save">${d.id ? 'Guardar cambios' : isP ? 'Crear proyecto' : 'Agregar tarea'}</button></span></footer></div></div>`;
 }
+function rowsBlock(d) {
+  return `<div class="f full ${V.err?.rows ? 'bad' : ''}"><span>Tareas del proyecto <em>· deje las horas vacías para repartirlas en automático</em></span>
+    <div class="rows" id="a-rows">${d.rows.map((r, i) => `<div class="trow" data-row="${i}"><span class="n">${i + 1}</span>
+      <input class="r-title" value="${esc(r.title)}" placeholder="Ej.: Plantilla de cotización" aria-label="Tarea ${i + 1}">
+      <div class="seg" role="radiogroup" aria-label="Responsable">${CONFIG.it.map(pp => `<button type="button" role="radio" data-rwho="${i}" data-k="${pp.key}" aria-checked="${r.who === pp.key}">${pp.key}</button>`).join('')}</div>
+      <label class="rh"><input class="r-hours" type="number" inputmode="decimal" min="0.5" step="0.5" placeholder="Auto" value="${+r.effort > 0 ? r.effort : ''}" aria-label="Horas de la tarea ${i + 1}"><span class="ra" id="ra-${i}"></span></label>
+      <button type="button" class="x" data-rdel="${i}" aria-label="Quitar tarea ${i + 1}" ${d.rows.length < 2 ? 'disabled' : ''}>×</button></div>`).join('')}</div>
+    <div class="rows-f"><button type="button" class="btn" data-radd>+ Agregar otra tarea</button></div>
+    <span class="err">Escriba al menos una tarea.</span><div id="a-split" style="margin-top:6px"></div></div>`;
+}
+function syncRows() {                               // muestra en vivo cuántas horas le tocan a cada tarea en automático
+  const d = V.draft; if (!d || d.kind !== 'project' || d.id || !$('#a-rows')) return;
+  const ts = d.rows.map((r, i) => ({ id: 'r' + i, effort: +r.effort || 0, created: i })).filter((t, i) => d.rows[i].title.trim() || i === 0);
+  const al = split(+d.effort || 0, ts);
+  d.rows.forEach((r, i) => { const el = $('#ra-' + i); if (el) el.textContent = +r.effort > 0 ? '' : al.out['r' + i] ? `= ${hh(al.out['r' + i])}` : ''; });
+  $('#a-split').innerHTML = `<div class="preview ${al.over > 0.004 ? 'warn' : ''}"><span>Estimado <b>${hh(al.budget)}</b> · ${ts.length} tarea${ts.length === 1 ? '' : 's'} suman <b>${hh(al.planned)}</b>${al.n ? ` · ${al.n} en automático` : ''}.</span>
+    ${al.over > 0.004 ? `<span>Suman ${hh(al.over)} más que el estimado. Se puede guardar igual; la diferencia aparece en el análisis del proyecto.</span>` : ''}</div>`;
+}
+const readRows = () => { const d = V.draft; if (!d || !d.rows || !$('#a-rows')) return;
+  document.querySelectorAll('#a-rows [data-row]').forEach(el => { const r = d.rows[+el.dataset.row]; if (!r) return; r.title = el.querySelector('.r-title').value; r.effort = +el.querySelector('.r-hours').value || 0; }); };
 function budgetBox(d) {
   const pr = S.projects.find(p => p.id === d.project); if (!pr) return '';
   const al = allocate(pr.id, { id: d.id || -1, effort: d.auto ? 0 : +d.effort || 0, created: d.created || nowMs() });
@@ -1143,9 +1217,9 @@ function previewFor(d) {
 const readDraft = () => { const d = V.draft, v = id => { const el = $(id); return el ? el.value : null; };
   d.title = v('#a-title') ?? d.title; const hv = v('#a-hours'); if (hv !== null) d.effort = +hv || 0;
   d.delivery = v('#a-date') ?? d.delivery; d.req = v('#a-req') ?? d.req; d.devops = String(v('#a-devops') ?? d.devops ?? '').replace(/\D/g, ''); d.obs = v('#a-obs') ?? d.obs;
-  const pj = v('#a-proj'); if (pj !== null) d.project = pj ? +pj : null; return d; };
-const refreshDraftBoxes = () => { readDraft(); const pv = $('#a-preview'), bx = $('#a-budget'); if (pv) pv.innerHTML = previewFor(V.draft); if (bx) bx.innerHTML = budgetBox(V.draft); };
-const reModal = () => { const dl = $('#ovl-add .dlg'), y = dl ? dl.scrollTop : 0; renderModals(); const d2 = $('#ovl-add .dlg'); if (d2) d2.scrollTop = y; };
+  const pj = v('#a-proj'); if (pj !== null) d.project = pj ? +pj : null; readRows(); return d; };
+const refreshDraftBoxes = () => { readDraft(); const pv = $('#a-preview'), bx = $('#a-budget'); if (pv) pv.innerHTML = previewFor(V.draft); if (bx) bx.innerHTML = budgetBox(V.draft); syncRows(); };
+const reModal = () => { const dl = $('#ovl-add .dlg'), y = dl ? dl.scrollTop : 0; renderModals(); const d2 = $('#ovl-add .dlg'); if (d2) d2.scrollTop = y; syncRows(); };
 
 /* ---------- Modal obligatorio: se acabaron las horas ---------- */
 function alarmModal(t) {
@@ -1200,13 +1274,13 @@ async function downloadReport(a, b) {
   const lateDays = t => { const end = t.delivered || (!isClosed(t) ? NOW().k : ''); return t.delivery && end && end > t.delivery ? days(t.delivery, end) : 0; };
 
   const rowsP = projs.map(({ p, i }) => ({ 'ID': tid(p), 'Proyecto': p.title, 'Responsable': person(p.who).name, 'Prioridad': PRIOS[p.prio].t, 'Requested by': p.req, 'Estado': i.state,
-    'Creado': dt(dk(p.created)), 'Delivery Date': dt(p.delivery), 'Fin (real o según plan)': dt(i.finishK), 'Días de atraso': i.late ? days(p.delivery, i.finishK) : 0,
+    'Creado': dt(dk(p.created)), 'Inicio (primera tarea)': dt(i.startK), 'Delivery Date': dt(p.delivery), 'Fin (real o según plan)': dt(i.finishK), 'Duración (días hábiles)': i.startK ? i.durDays : '', 'Días de atraso': i.late ? days(p.delivery, i.finishK) : 0,
     'Tareas': i.ts.length, 'Tareas finalizadas': i.done.length, 'Avance %': i.pct, 'Horas estimadas': r2(i.est), 'Horas repartidas en tareas': r2(i.inTasks),
     'Horas de extensión': r2(i.ext), 'Extensiones aprobadas': i.nExt, 'Horas proyectadas': r2(i.proj), 'Horas trabajadas': r2(i.wk), 'Desviación (h)': r2(i.dev), 'Desviación %': i.est ? i.devPct : '' }));
   const rowsT = tasks.map(t => { const ini = effOf(t), xs = S.exts.filter(x => x.taskId === t.id);
     return { 'ID': tid(t), 'Proyecto': projOf(t) ? projOf(t).title : '(sin proyecto)', 'Title': t.title, 'Work Item Type': t.type, 'Assigned To': person(t.who).name, 'State': status(t), 'Priority': PRIOS[t.prio].t,
       'Horas iniciales': r2(ini), 'Horas automáticas': isAuto(t) ? 'Sí' : 'No', 'Horas de extensión': r2(t.ext), 'Horas totales': r2(total(t)), 'Horas trabajadas': r2(worked(t)),
-      'Extensión %': ini ? Math.round(100 * (+t.ext || 0) / ini) : '', 'Extensiones': xs.length, 'Created Date': dt(dk(t.created)), 'Closed Date': dt(dk(t.closed)),
+      'Extensión %': ini ? Math.round(100 * (+t.ext || 0) / ini) : '', 'Extensiones': xs.length, 'Created Date': dt(dk(t.created)), 'Inició': dt(dk(t.started)), 'Closed Date': dt(dk(t.closed)), 'Duración (días hábiles)': t.started ? bizDays(dk(t.started), dk(t.closed) || NOW().k) : '',
       'Delivery Date': dt(t.delivery), 'Delivered Date': dt(t.delivered), 'Días de atraso': lateDays(t), 'Requested by': t.req, 'Observaciones': t.obs }; });
   const rowsX = exts.map(x => { const t = S.tasks.find(y => y.id === x.taskId);
     return { 'Solicitada': dt(dk(x.created)), 'Tarea ID': t ? tid(t) : '', 'Tarea': x.title, 'Proyecto': t && projOf(t) ? projOf(t).title : '(sin proyecto)', 'Responsable': person(x.who).name,
@@ -1229,8 +1303,8 @@ async function downloadReport(a, b) {
   const add = (name, ws, widths) => { ws['!cols'] = widths.map(w => ({ wch: w })); XLSX.utils.book_append_sheet(wb, ws, name); };
   const sheet = (rows, empty) => XLSX.utils.json_to_sheet(rows.length ? rows : [{ 'Sin datos': empty }], { cellDates: true, dateNF: 'dd/mm/yyyy' });
   add('Resumen', XLSX.utils.aoa_to_sheet(res), [42, 22, 18, 14, 26]);
-  add('Proyectos', sheet(rowsP, 'No hay proyectos en este período'), [10, 34, 16, 18, 16, 13, 12, 13, 14, 10, 8, 10, 9, 10, 12, 11, 11, 12, 11, 11, 11]);
-  add('Tareas', sheet(rowsT, 'No hay tareas en este período'), [10, 28, 36, 12, 16, 18, 18, 10, 10, 10, 10, 10, 10, 9, 12, 12, 12, 12, 10, 16, 40]);
+  add('Proyectos', sheet(rowsP, 'No hay proyectos en este período'), [10, 34, 16, 18, 16, 13, 12, 14, 13, 14, 12, 10, 8, 10, 9, 10, 12, 11, 11, 12, 11, 11, 11]);
+  add('Tareas', sheet(rowsT, 'No hay tareas en este período'), [10, 28, 36, 12, 16, 18, 18, 10, 10, 10, 10, 10, 10, 9, 12, 12, 12, 12, 12, 12, 10, 16, 40]);
   add('Extensiones', sheet(rowsX, 'No hay extensiones en este período'), [12, 10, 32, 28, 16, 10, 10, 11, 32, 60, 50, 14, 14, 14, 36]);
   add('Motivos', sheet(rowsM, 'No hay extensiones en este período'), [44, 12, 16, 15, 22]);
   XLSX.writeFile(wb, `Reporte TI ${a} al ${b}.xlsx`);
@@ -1250,7 +1324,7 @@ function render() {
   const mineKey = V.me && V.me.role === 'it' ? V.me.key : ITK[0];
   $('#addtop').innerHTML = !canEdit() ? '' : V.tab === 'Proyectos' ? `<span class="minirow">${isAppr() ? '<button class="btn" data-report>Descargar reporte</button>' : ''}<button class="btn primary" data-addp>+ Nuevo proyecto</button></span>`
     : ITK.includes(V.tab) ? '' : `<button class="btn primary" data-add="${mineKey}">+ Agregar tarea</button>`;
-  view().innerHTML = V.tab === 'Equipo' ? teamView() : V.tab === 'Extensiones' ? extView() : V.tab === 'Proyectos' ? projectsView() : personView(V.tab);
+  view().innerHTML = V.tab === 'Equipo' ? teamView() : V.tab === 'Extensiones' ? extView() : V.tab === 'Proyectos' ? (S.projects.some(p => p.id === V.proj) ? projectDetail(S.projects.find(p => p.id === V.proj)) : projectsView()) : personView(V.tab);
   renderModals();
 }
 function renderModals() {
@@ -1289,15 +1363,17 @@ async function tick() {
 function openAdd(who, t, o = {}) {
   V.err = null;
   if (t) V.draft = { ...t, kind: t.type === PROJ ? 'project' : 'task', auto: isAuto(t) };
-  else { const pr = o.project ? S.projects.find(p => p.id === o.project) : null, isP = o.kind === 'project';
+  else { if (o.kind !== 'project' && !S.projects.length) { toast('Las tareas van dentro de un proyecto. Primero cree el proyecto con sus tareas.'); o = { kind: 'project' }; }
+    const pr = o.project ? S.projects.find(p => p.id === o.project) : null, isP = o.kind === 'project';
     V.draft = { kind: isP ? 'project' : 'task', who: who || (V.me.role === 'it' ? V.me.key : (pr ? pr.who : ITK[0])), title: '', prio: pr ? pr.prio : 2, effort: isP ? 40 : 4, type: isP ? PROJ : 'Task',
-      delivery: pr ? pr.delivery : '', req: pr ? pr.req : '', devops: '', obs: '', project: pr ? pr.id : null, auto: !!pr, created: nowMs() }; }
-  V.modal = 'add'; renderModals(); setTimeout(() => $('#a-title') && $('#a-title').focus(), 30);
+      delivery: pr ? pr.delivery : '', req: pr ? pr.req : '', devops: '', obs: '', project: pr ? pr.id : null, auto: !!pr, created: nowMs() };
+    if (isP) V.draft.rows = [{ title: '', who: V.draft.who, effort: 0 }]; }
+  V.modal = 'add'; renderModals(); syncRows(); setTimeout(() => $('#a-title') && $('#a-title').focus(), 30);
 }
 document.addEventListener('click', async e => {
   const t = e.target, c = s => t.closest(s);
   // pestañas
-  const tab = c('.tab'); if (tab) { V.tab = tab.id.slice(4); V.week = 0; V.filter = 'open'; render(); return; }
+  const tab = c('.tab'); if (tab) { V.tab = tab.id.slice(4); V.week = 0; V.filter = 'open'; V.proj = null; render(); return; }
   if (c('#logout')) { G.pca.logoutRedirect({ account: G.account, postLogoutRedirectUri: location.origin + location.pathname }); return; }
   // cerrar modales (nunca el aviso de horas agotadas)
   if (c('[data-close]') || (t.classList.contains('ovl') && t.id !== 'ovl-alarm')) { if (t.closest('#ovl-alarm')) return; V.modal = null; renderModals(); return; }
@@ -1308,6 +1384,7 @@ document.addEventListener('click', async e => {
   if (c('#wk-today')) { V.week = 0; render(); return; }
   const chip = c('.chip[data-f]'); if (chip) { V.filter = chip.dataset.f; render(); return; }
   const pchip = c('.chip[data-pf]'); if (pchip) { V.pfilter = pchip.dataset.pf; render(); return; }
+  const op = c('[data-openp]'); if (op) { V.proj = op.dataset.openp ? +op.dataset.openp : null; render(); window.scrollTo(0, 0); return; }
   // proyectos y reporte
   if (c('[data-addp]')) { openAdd(null, null, { kind: 'project' }); return; }
   const at = c('[data-addt]'); if (at) { openAdd(null, null, { project: +at.dataset.addt }); return; }
@@ -1335,22 +1412,31 @@ document.addEventListener('click', async e => {
     V.confirm = isP ? { title: 'Eliminar proyecto', text: 'El proyecto se borra. Esta acción no se puede deshacer.', ok: 'Eliminar', fn: () => DB.delTask(id), done: 'Proyecto eliminado.' }
       : { title: 'Eliminar tarea', text: 'La tarea se borra y sale del plan. Esta acción no se puede deshacer.', ok: 'Eliminar', fn: () => DB.delTask(id), done: 'Tarea eliminada.' }; V.modal = 'confirm'; renderModals(); return; }
   if (V.modal === 'add') {
-    const w = c('[data-who]'), pr = c('[data-prio]'), ty = c('[data-type]'), ds = c('[data-dset]'), kd = c('[data-kind]'), au = c('[data-auto]');
-    if (w || pr || ty || ds || kd || au) { readDraft(); const d = V.draft;
-      if (w) d.who = w.dataset.who; if (pr) d.prio = +pr.dataset.prio; if (ty) d.type = ty.dataset.type;
+    const w = c('[data-who]'), pr = c('[data-prio]'), ty = c('[data-type]'), ds = c('[data-dset]'), kd = c('[data-kind]'), au = c('[data-auto]'), rw = c('[data-rwho]'), ra = c('[data-radd]'), rx = c('[data-rdel]');
+    if (w || pr || ty || ds || kd || au || rw || ra || rx) { readDraft(); const d = V.draft;
+      if (rw) d.rows[+rw.dataset.rwho].who = rw.dataset.k;
+      if (ra) d.rows.push({ title: '', who: (d.rows[d.rows.length - 1] || {}).who || d.who, effort: 0 });
+      if (rx && d.rows.length > 1) d.rows.splice(+rx.dataset.rdel, 1);
+      if (w) { if (d.rows && d.rows.every(r => r.who === d.who)) d.rows.forEach(r => { r.who = w.dataset.who; }); d.who = w.dataset.who; } if (pr) d.prio = +pr.dataset.prio; if (ty) d.type = ty.dataset.type;
       if (kd) { d.kind = kd.dataset.kind; d.type = d.kind === 'project' ? PROJ : 'Task'; d.project = null; d.auto = false; d.effort = d.kind === 'project' ? 40 : 4; }
       if (au) { d.auto = au.dataset.auto === '1'; if (!d.auto && !(d.effort >= 0.5)) d.effort = autoHours(d) || 4; }
       if (ds) { const v = ds.dataset.dset; if (v === 'plan') { d.delivery = ''; const eh = d.project && d.auto ? autoHours(d) : d.effort; const pl = plan(d.who, { id: -1, who: d.who, prio: d.prio, effort: eh, ext: 0, worked: 0, status: 'Por empezar', created: nowMs() }); d.delivery = pl.finish[-1] ? pl.finish[-1].k : ''; }
         else if (v === '') d.delivery = ''; else { let k = NOW().k, n = +v; while (n > 0) { k = addD(k, 1); if (isBiz(k)) n--; } d.delivery = k; } }
-      reModal(); return; }
+      reModal(); if (ra) { const ins = document.querySelectorAll('#a-rows .r-title'); ins[ins.length - 1].focus(); } return; }
     if (c('#a-save')) { const d = readDraft(), isP = d.kind === 'project', manual = isP || !d.project || !d.auto;
-      V.err = { title: !d.title.trim(), hours: manual && !(d.effort >= 0.5) };
-      if (V.err.title || V.err.hours) { reModal(); return; }
+      const rows = isP && !d.id ? d.rows.filter(r => r.title.trim()) : [];
+      V.err = { title: !d.title.trim(), hours: manual && !(d.effort >= 0.5), proj: !isP && !d.project, rows: isP && !d.id && !rows.length };
+      if (V.err.title || V.err.hours || V.err.proj || V.err.rows) { reModal(); const b = document.querySelector('#addform .bad'); if (b) b.scrollIntoView({ block: 'center' }); return; }
       const fields = { title: d.title.trim(), who: d.who, prio: d.prio, effort: manual ? Math.round(d.effort * 2) / 2 : 0, type: isP ? PROJ : d.type, delivery: d.delivery || '',
         req: (d.req || '').trim(), devops: d.devops, obs: (d.obs || '').trim(), project: isP ? null : d.project || null };
       V.modal = null; V.err = null;
       if (d.id) await act(() => DB.setTask(d.id, fields), 'Cambios guardados. El plan se reacomodó.');
-      else if (isP) await act(() => DB.addTask({ ...fields, ext: 0, worked: 0, runFrom: null, status: 'Activo', closed: null, delivered: '' }), 'Proyecto creado. Ahora agréguele sus tareas.');
+      else if (isP) await act(async () => {                       // primero el proyecto, luego sus tareas en orden
+        const pr = await DB.addTask({ ...fields, ext: 0, worked: 0, runFrom: null, status: 'Activo', closed: null, delivered: '' });
+        for (const r of rows) await DB.addTask({ title: r.title.trim(), who: r.who, prio: fields.prio, effort: +r.effort > 0 ? Math.round(r.effort * 2) / 2 : 0, type: 'Task', delivery: fields.delivery, req: fields.req, devops: '', obs: '',
+          project: pr.id, ext: 0, worked: 0, runFrom: null, status: 'Por empezar', closed: null, delivered: '', started: null });
+        V.tab = 'Proyectos'; V.proj = pr.id;
+      }, `Proyecto creado con ${rows.length} tarea${rows.length === 1 ? '' : 's'}.`);
       else await act(() => DB.addTask({ ...fields, ext: 0, worked: 0, runFrom: null, status: 'Por empezar', closed: null, delivered: '' }), `Tarea agregada a «Por empezar» de ${d.who}.`);
       return; }
   }
@@ -1377,6 +1463,7 @@ document.addEventListener('input', e => {
   const bf = e.target.closest('.f.bad'); if (bf) bf.classList.remove('bad');
   if (e.target.closest('.hp')) syncHp(e.target.id);
   if (e.target.id === 'a-hours' || e.target.id === 'a-date') refreshDraftBoxes();
+  if (e.target.classList.contains('r-hours') || e.target.classList.contains('r-title')) { readRows(); syncRows(); }
   if (e.target.id === 'x-explic' || e.target.id === 'x-pend') countChars();
 });
 document.addEventListener('change', e => {
