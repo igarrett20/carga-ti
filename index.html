@@ -271,6 +271,7 @@ tr.done td.title{font-weight:500}
 
 /* Por empezar */
 .queue{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.queue.scroll{max-height:470px;overflow-y:auto;overscroll-behavior:contain}
 .queue li{display:grid;grid-template-columns:28px minmax(0,1fr) auto auto;gap:14px;align-items:center;padding:12px 14px;border-top:1px solid var(--line)}
 .queue li:first-child{border-top:0}
 .queue .pos{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;background:var(--c-soft);color:var(--ink);border:2px solid var(--c)}
@@ -421,6 +422,17 @@ tr.done td.title{font-weight:500}
 .psub{display:block;font-size:12px;color:var(--brand);font-weight:600}
 .auto{font-size:10.5px;font-weight:700;color:var(--muted);border:1px dashed var(--line-strong);border-radius:4px;padding:0 4px;margin-left:4px}
 .loose{font-size:13.5px;color:var(--muted);margin:4px 0 0}
+/* Orden manual (flechas y arrastrar) */
+.ord{display:inline-flex;gap:3px;align-items:center}
+.ord .rk{min-width:24px;height:24px;border-radius:50%;display:inline-grid;place-items:center;font-size:12px;font-weight:700;background:var(--brand-soft);color:var(--brand)}
+.ord button{appearance:none;border:1px solid var(--line);background:#fff;border-radius:6px;width:26px;height:26px;cursor:pointer;color:var(--muted);font-size:13px;line-height:1}
+.ord button:hover:not(:disabled){border-color:var(--brand);color:var(--brand)}
+.ord button:disabled{opacity:.35;cursor:default}
+.grip{cursor:grab;color:var(--line-strong);font-size:16px;letter-spacing:-2px;user-select:none}
+[data-drag][draggable="true"]{cursor:grab}
+.dragging{opacity:.45}
+.proj.drop-b{box-shadow:0 -3px 0 var(--brand)}.proj.drop-a{box-shadow:0 3px 0 var(--brand)}
+tr.drop-b td{box-shadow:inset 0 3px 0 var(--brand)}tr.drop-a td{box-shadow:inset 0 -3px 0 var(--brand)}
 .proj h3 button{all:unset;cursor:pointer}.proj h3 button:hover{color:var(--brand);text-decoration:underline}
 .back{appearance:none;border:0;background:none;color:var(--brand);font-weight:600;cursor:pointer;padding:0;margin:0 0 12px;font-size:14px}
 .pd-h{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start;margin-bottom:16px}
@@ -488,6 +500,7 @@ const CONFIG = {
     solicitudes: { site: 'rrhh', name: 'Solicitudes' },
     permisos:    { site: 'rrhh', name: 'Permisos' },
     feriados:    { site: 'rrhh', name: 'Feriados' },
+    personal:    { site: 'rrhh', name: 'Personal' },       // de aquí sale el cumpleaños (día libre)
   },
   // Nombres internos de las columnas del sistema de vacaciones (por si algún día cambian allá)
   vacCols: {
@@ -495,6 +508,7 @@ const CONFIG = {
     dias: 'Dias', desde: 'Desde', hasta: 'Hasta',            // Solicitudes
     fecha: 'Fecha', horaSalida: 'HoraSalida', horas: 'Horas', // Permisos
     feriadoFecha: 'Fecha',                                  // Feriados (el nombre va en Title)
+    personaCorreo: 'Correo', cumpleMes: 'CumpleMes', cumpleDia: 'CumpleDia', // Personal
   },
   // Horario de TI. De lunes a jueves el almuerzo es de 45 min; los viernes es de 1 h y salen a las 4:00.
   jornada: {
@@ -572,7 +586,7 @@ const ALL_MAILS = () => [...CONFIG.approvers, ...CONFIG.it].map(p => p.email);
 const APPR_MAILS = () => CONFIG.approvers.map(p => p.email);
 
 /* ---------- Estado ---------- */
-// tarea: {id, devops, type, title, who, prio, effort (0 = automática), ext, worked, runFrom(ms|null), status, created(ms), started(ms|null), closed(ms|null), obs, delivery(k), delivered(k), req, project(id|null)}
+// tarea: {id, devops, type, title, who, prio, rank (Orden manual), effort (0 = automática), ext, worked, runFrom(ms|null), status, created(ms), started(ms|null), closed(ms|null), obs, delivery(k), delivered(k), req, project(id|null)}
 // proyecto: mismos campos, con type = PROJ; effort = horas estimadas del proyecto
 // extensión: {id, taskId, who, hours, motivo, explic, pend, newDate, status:'Pendiente'|'Aprobada', approvedHours, approvedBy, approvedAt, comment, created}
 let S = { tasks: [], projects: [], exts: [], meet: [], vac: [], hol: { ...DEFAULT_HOL } };
@@ -669,7 +683,13 @@ const autoHours = d => allocate(d.project, { id: d.id || -1, effort: 0, created:
 /* ---------- Plan: la forma más eficiente de acomodar la cola ---------- */
 // 1) lo que ya está en curso sigue primero (cambiar de tarea cuesta tiempo)
 // 2) luego por prioridad, 3) por fecha de entrega más cercana, 4) lo ya empezado antes que lo nuevo, 5) lo más corto primero
-const order = (a, b) => (b.status === 'En curso') - (a.status === 'En curso') || a.prio - b.prio ||
+// Orden manual: primero el orden del proyecto, luego el orden de la tarea dentro del proyecto. Lo que no tenga orden va al final, por prioridad.
+const rk = x => x == null ? Infinity : +x;
+const byRank = (a, b) => { const d = rk(a) - rk(b); return Number.isNaN(d) ? 0 : d; };
+const projCmp = (a, b) => byRank(a.rank, b.rank) || a.prio - b.prio || (a.delivery || '9999').localeCompare(b.delivery || '9999') || a.created - b.created;
+const order = (a, b) => (b.status === 'En curso') - (a.status === 'En curso') || byRank((projOf(a) || {}).rank, (projOf(b) || {}).rank) ||
+  (a.project || 0) - (b.project || 0) || byRank(a.rank, b.rank) || autoOrder(a, b);
+const autoOrder = (a, b) => a.prio - b.prio ||
   (a.delivery || '9999').localeCompare(b.delivery || '9999') || (worked(b) > 0) - (worked(a) > 0) || remaining(a) - remaining(b) || a.created - b.created;
 function plan(p, extra) {
   const q = S.tasks.filter(t => t.who === p && plannable(t)).concat(extra ? [extra] : []).sort(order);
@@ -734,10 +754,10 @@ async function allItems(list) {
 }
 const T_OUT = t => ({ Title: t.title, DevOpsId: t.devops ? +t.devops : null, Tipo: t.type, Asignado: person(t.who).email, Estado: t.status, Prioridad: t.prio,
   HorasEsfuerzo: +t.effort > 0 ? +t.effort : null, ProyectoId: t.project || null, HorasExtension: +t.ext || 0, HorasTrabajadas: Math.round((+t.worked || 0) * 1000) / 1000, SesionInicio: t.runFrom ? new Date(t.runFrom).toISOString() : '',
-  FechaEntrega: wd(t.delivery), FechaEntregada: wd(t.delivered), FechaCierre: t.closed ? new Date(t.closed).toISOString() : null, FechaInicio: t.started ? new Date(t.started).toISOString() : null, Observaciones: t.obs || '', SolicitadoPor: t.req || '' });
+  FechaEntrega: wd(t.delivery), FechaEntregada: wd(t.delivered), FechaCierre: t.closed ? new Date(t.closed).toISOString() : null, FechaInicio: t.started ? new Date(t.started).toISOString() : null, Orden: t.rank != null ? +t.rank : null, Observaciones: t.obs || '', SolicitadoPor: t.req || '' });
 const T_IN = i => { const f = i.fields; return { id: +i.id, devops: f.DevOpsId || '', type: f.Tipo || 'Task', title: f.Title || '', who: keyByEmail(f.Asignado), status: f.Estado || 'Por empezar', prio: +f.Prioridad || 3,
   effort: +f.HorasEsfuerzo || 0, ext: +f.HorasExtension || 0, worked: +f.HorasTrabajadas || 0, runFrom: f.SesionInicio ? Date.parse(f.SesionInicio) : null,
-  created: Date.parse(i.createdDateTime), closed: f.FechaCierre ? Date.parse(f.FechaCierre) : null, started: f.FechaInicio ? Date.parse(f.FechaInicio) : null, obs: f.Observaciones || '', delivery: rd(f.FechaEntrega), delivered: rd(f.FechaEntregada), req: f.SolicitadoPor || '', project: +f.ProyectoId || null }; };
+  created: Date.parse(i.createdDateTime), closed: f.FechaCierre ? Date.parse(f.FechaCierre) : null, started: f.FechaInicio ? Date.parse(f.FechaInicio) : null, rank: f.Orden != null ? +f.Orden : null, obs: f.Observaciones || '', delivery: rd(f.FechaEntrega), delivered: rd(f.FechaEntregada), req: f.SolicitadoPor || '', project: +f.ProyectoId || null }; };
 const X_OUT = x => ({ Title: x.title || '', TareaId: x.taskId, Asignado: person(x.who).email, HorasSolicitadas: x.hours, Motivo: x.motivo, Explicacion: x.explic, Pendiente: x.pend,
   NuevaFecha: wd(x.newDate), Estado: x.status, HorasAprobadas: x.approvedHours ?? null, AprobadoPor: x.approvedBy || '', FechaAprobacion: x.approvedAt ? new Date(x.approvedAt).toISOString() : null, Comentario: x.comment || '' });
 const X_IN = i => { const f = i.fields; return { id: +i.id, title: f.Title, taskId: +f.TareaId, who: keyByEmail(f.Asignado), hours: +f.HorasSolicitadas || 0, motivo: f.Motivo || '', explic: f.Explicacion || '', pend: f.Pendiente || '',
@@ -796,6 +816,11 @@ const Live = {
     pm.forEach(i => { const f = i.fields, p = keyByEmail(f[C.correo]); if (!p || f[C.estado] !== C.aprobada) return;
       const m = /^(\d{1,2}):(\d{2})/.exec(f[C.horaSalida] || ''); const s = m ? +m[1] + +m[2] / 60 : 8;
       vac.push({ who: p, k: rd(f[C.fecha]), p: 'h', s, e: s + (+f[C.horas] || 1), label: 'Permiso' }); });
+    // Cumpleaños: día libre si cae en día hábil (igual que en Vacaciones y permisos)
+    try { const yr = new Date(nowMs()).getFullYear();
+      (await allItems('personal')).forEach(i => { const f = i.fields, p = keyByEmail(f[C.personaCorreo]), m = +f[C.cumpleMes], d = +f[C.cumpleDia]; if (!p || !m || !d) return;
+        [yr - 1, yr, yr + 1].forEach(y => vac.push({ who: p, k: `${y}-${pad(m)}-${pad(d)}`, p: 'full', label: 'Cumpleaños' })); }); }
+    catch (e) { console.warn('Personal', e); toast('No se pudieron leer los cumpleaños de la lista Personal: ' + (e.message || e)); }
     S.vac = vac;
     try { await loadSchedule(); } catch (e) { console.warn('Calendario de Teams', e); toast('No se pudo leer el calendario de Teams: ' + (e.message || e)); }
   },
@@ -921,9 +946,9 @@ function personView(p) {
   // Por empezar + capacidad
   const waiting = open.filter(t => status(t) === 'Extensión solicitada');
   const queue = pl.q.filter(t => t.status !== 'En curso');
-  h += `<div class="cols2"><section><div class="sec-h"><div><h2>Por empezar</h2><p>En el orden más eficiente: prioridad, fecha de entrega y lo ya empezado primero.</p></div>${canEdit() ? `<button class="btn primary" data-add="${p}">+ Agregar tarea</button>` : ''}</div>
-    <ul class="queue">${queue.map((t, i) => { const s = pl.start[t.id], f = pl.finish[t.id], r = risk(t);
-      return `<li class="prio${t.prio}"><span class="pos">${i + 1}</span><div class="main"><b>${esc(t.title)}</b>${projTag(t)}
+  h += `<div class="cols2"><section><div class="sec-h"><div><h2>Por empezar</h2><p>En el orden de los proyectos y sus tareas. La primera es la sugerida.</p></div>${canEdit() ? `<button class="btn primary" data-add="${p}">+ Agregar tarea</button>` : ''}</div>
+    <ul class="queue ${queue.length + waiting.length > 6 ? 'scroll' : ''}">${queue.map((t, i) => { const s = pl.start[t.id], f = pl.finish[t.id], r = risk(t);
+      return `<li class="prio${t.prio}"><span class="pos">${i + 1}</span><div class="main"><b>${esc(t.title)}</b>${projTag(t)}${i === 0 ? ' <span class="tag good">Siguiente</span>' : ''}
         <p>${esc(tid(t))} · ${PRIOS[t.prio].t} · ${t.status === 'En pausa' ? `<b>En pausa</b>, ${hh(worked(t))} trabajadas` : 'Sin empezar'}${s ? ` · empezaría ${fD(s.k)} ${fT12(s.h)}` : ''}${f ? `, termina ${fD(f.k)}` : ''}${r.cls === 'risk' ? ` · <span class="tag risk">${r.txt}</span>` : ''}</p></div>
         <div class="hrs"><b>${hh(remaining(t))}</b>${t.delivery ? 'entrega ' + fD(t.delivery) : 'sin fecha'}</div>
         <div class="qa">${mine2 ? `<button class="btn ${i === 0 ? 'primary' : ''}" data-start="${t.id}">${t.status === 'En pausa' ? 'Continuar' : 'Empezar'}</button>` : ''}</div></li>`; }).join('')}
@@ -1022,6 +1047,23 @@ function teamView() {
   return h;
 }
 
+/* ---------- Orden manual ---------- */
+const activeProjects = () => S.projects.filter(p => projInfo(p).state !== 'Completado').sort(projCmp);
+const openTasksOf = pid => tasksOf(pid).filter(t => !isClosed(t)).sort((a, b) => byRank(a.rank, b.rank) || autoOrder(a, b));
+const rankList = key => { const [k, id] = key.split(':'); if (k === 'p') return activeProjects(); const t = S.tasks.find(x => x.id === +id); return t ? openTasksOf(t.project) : []; };
+async function saveRanks(list) { await Promise.all(list.map((x, i) => x.rank === i + 1 ? null : DB.setTask(x.id, { rank: i + 1 })).filter(Boolean)); }
+async function moveBy(key, delta) { const list = rankList(key), id = +key.split(':')[1], i = list.findIndex(x => x.id === id), j = i + delta;
+  if (i < 0 || j < 0 || j >= list.length) return; [list[i], list[j]] = [list[j], list[i]]; await saveRanks(list); }
+async function moveTo(src, dst, after) { if (src === dst || src[0] !== dst[0]) return; const list = rankList(src), sid = +src.split(':')[1], did = +dst.split(':')[1];
+  const item = list.find(x => x.id === sid); if (!item || !list.some(x => x.id === did)) return;
+  const rest = list.filter(x => x.id !== sid), at = rest.findIndex(x => x.id === did) + (after ? 1 : 0); rest.splice(at, 0, item); await saveRanks(rest); }
+async function autoRankAll() {                       // proyectos por prioridad y fecha; tareas por el orden en que se crearon
+  await saveRanks(S.projects.filter(p => projInfo(p).state !== 'Completado').sort((a, b) => a.prio - b.prio || (a.delivery || '9999').localeCompare(b.delivery || '9999') || a.created - b.created));
+  for (const p of S.projects) await saveRanks(tasksOf(p.id).filter(t => !isClosed(t)).sort((a, b) => a.created - b.created));
+}
+const ordCtl = (key, i, n) => `<span class="ord"><span class="grip" aria-hidden="true">⋮⋮</span><span class="rk">${i + 1}</span><button type="button" data-mv="${key}" data-d="-1" ${i === 0 ? 'disabled' : ''} aria-label="Subir">↑</button><button type="button" data-mv="${key}" data-d="1" ${i === n - 1 ? 'disabled' : ''} aria-label="Bajar">↓</button></span>`;
+const nextRank = list => list.reduce((m, x) => Math.max(m, x.rank || 0), 0) + 1;
+
 /* ---------- Proyectos (vista macro) ---------- */
 function projInfo(p) {
   const ts = tasksOf(p.id), done = ts.filter(isClosed), open = ts.filter(t => !isClosed(t));
@@ -1056,16 +1098,19 @@ function projectsView() {
     <div class="stat"><span>Extensiones aprobadas</span><strong>${hh(extH)}</strong><span>${S.exts.filter(x => x.status === 'Aprobada').length} solicitudes</span></div></div>`;
   const counts = { open: act.length, done: doneP, all: all.length };
   const list = all.filter(x => V.pfilter === 'all' || (V.pfilter === 'open' ? !isDone(x) : isDone(x)))
-    .sort((a, b) => isDone(a) - isDone(b) || a.p.prio - b.p.prio || (a.p.delivery || '9999').localeCompare(b.p.delivery || '9999') || a.p.created - b.p.created);
-  h += `<section class="sec"><div class="sec-h"><div><h2>Proyectos</h2><p>Avance por tareas finalizadas y análisis de tiempo: estimado del proyecto contra lo que suman sus tareas y extensiones.</p></div>
-    <div class="chips">${[['open', 'Activos'], ['done', 'Completados'], ['all', 'Todos']].map(([k, l]) => `<button class="chip" data-pf="${k}" aria-pressed="${V.pfilter === k}">${l} <b>${counts[k]}</b></button>`).join('')}</div></div>`;
+    .sort((a, b) => isDone(a) - isDone(b) || projCmp(a.p, b.p));
+  const actIds = activeProjects().map(x => x.id);
+  h += `<section class="sec"><div class="sec-h"><div><h2>Proyectos</h2><p>Acomódelos en el orden en que se van a trabajar (flechas o arrastrando). La cola de cada persona sigue este orden.</p></div>
+    <span class="minirow">${canEdit() && act.length > 1 ? '<button class="btn" data-autorank>Ordenar automático</button>' : ''}
+    <div class="chips">${[['open', 'Activos'], ['done', 'Completados'], ['all', 'Todos']].map(([k, l]) => `<button class="chip" data-pf="${k}" aria-pressed="${V.pfilter === k}">${l} <b>${counts[k]}</b></button>`).join('')}</div></span></div>`;
   h += list.map(({ p, i }) => {
     const fin = i.state === 'Completado' ? `Terminado el ${fD(i.finishK)}${i.late ? ' · <span class="tag risk">Entregado tarde</span>' : ''}`
       : i.finishK ? `Termina según el plan: <b>${fD(i.finishK)}</b>${p.delivery ? (i.late ? ' · <span class="tag risk">No llega a la fecha</span>' : ' · <span class="tag good">A tiempo</span>') : ''}`
       : i.ts.length ? 'Sus tareas esperan extensión o no tienen horas' : 'Agregue las tareas para ver el plan';
     const al = i.alloc;
-    return `<article class="proj prio${p.prio} ${i.state === 'Completado' ? 'done' : ''}">
-      <div class="ph"><div><h3><button data-openp="${p.id}">${esc(p.title)}</button></h3><div class="sub">${esc(tid(p))} · Responsable ${esc(person(p.who).name)}${p.req ? ` · Requested by ${esc(p.req)}` : ''} · Creado el ${fS(K(new Date(p.created)))}</div></div>
+    const ai = actIds.indexOf(p.id), movable = canEdit() && ai >= 0;
+    return `<article class="proj prio${p.prio} ${i.state === 'Completado' ? 'done' : ''}" ${movable ? `data-drag="p:${p.id}" draggable="true"` : ''}>
+      <div class="ph"><div style="display:flex;gap:12px;align-items:flex-start">${movable ? ordCtl('p:' + p.id, ai, actIds.length) : ''}<div><h3><button data-openp="${p.id}">${esc(p.title)}</button></h3><div class="sub">${esc(tid(p))} · Responsable ${esc(person(p.who).name)}${p.req ? ` · Requested by ${esc(p.req)}` : ''} · Creado el ${fS(K(new Date(p.created)))}</div></div></div>
         <div class="pr">${prioPill(p.prio)}<span class="tag ${i.state === 'Completado' ? 'good' : i.state === 'En curso' ? '' : 'warn'}">${i.state}</span></div></div>
       <div class="pprog"><span class="track" role="img" aria-label="${i.pct}% de tareas finalizadas"><i style="width:${i.pct}%"></i></span><span><b>${i.done.length} de ${i.ts.length} tareas</b> (${i.pct}%)</span></div>
       <div class="kv5"><div><span>Estimado del proyecto</span><b>${hh(i.est)}</b></div>
@@ -1101,16 +1146,17 @@ function projectDetail(p) {
       <div class="stat"><span>Inicio</span><strong>${i.startK ? fD(i.startK) : '—'}</strong><small>${i.startK ? (i.state === 'Completado' ? `duró ${daysTxt(i.durDays)}` : `lleva ${daysTxt(i.durDays)}`) : 'ninguna tarea empezada'}</small></div>
       <div class="stat"><span>Fin</span>${fin}</div></div>
     ${i.alloc.over > 0.004 ? `<div class="preview warn" style="margin-bottom:16px"><span>Las tareas suman ${hh(i.alloc.planned)}: ${hh(i.alloc.over)} más que el estimado de ${hh(i.alloc.budget)}.</span></div>` : ''}
-    <section class="sec"><div class="sec-h"><div><h2>Tareas del proyecto</h2><p>Cuánto se estimó, cuánto llevan y cuánto duraron.</p></div></div>
-    <div class="tbl"><table><thead><tr><th>ID</th><th>Tarea</th><th>Responsable</th><th>Estado</th><th class="num">Horas asignadas</th><th class="num">Extensión</th><th class="num">Trabajadas</th><th>Avance</th><th>Inició</th><th>Terminó</th><th>Duración</th><th>Entrega</th>${canEdit() ? '<th></th>' : ''}</tr></thead><tbody>`;
-  h += i.ts.slice().sort((a, b) => isClosed(a) - isClosed(b) || order(a, b)).map(t => {
+    <section class="sec"><div class="sec-h"><div><h2>Tareas del proyecto</h2><p>Acomódelas en el orden en que se van a hacer (flechas o arrastrando). Cuánto se estimó, cuánto llevan y cuánto duraron.</p></div></div>
+    <div class="tbl"><table><thead><tr>${canEdit() ? '<th>Orden</th>' : ''}<th>ID</th><th>Tarea</th><th>Responsable</th><th>Estado</th><th class="num">Horas asignadas</th><th class="num">Extensión</th><th class="num">Trabajadas</th><th>Avance</th><th>Inició</th><th>Terminó</th><th>Duración</th><th>Entrega</th>${canEdit() ? '<th></th>' : ''}</tr></thead><tbody>`;
+  const ot = openTasksOf(p.id), oi = ot.map(t => t.id);
+  h += ot.concat(i.done.slice().sort((a, b) => (a.closed || 0) - (b.closed || 0))).map(t => { const ix = oi.indexOf(t.id);
     const st = status(t), r = risk(t), xs = S.exts.filter(x => x.taskId === t.id), sK = t.started ? K(new Date(t.started)) : '', cK = t.closed ? K(new Date(t.closed)) : '';
     const durTxt = sK ? `${isClosed(t) ? '' : 'lleva '}${daysTxt(bizDays(sK, cK || n.k))}` : '—';
-    return `<tr class="${isClosed(t) ? 'done' : ''}"><td class="idc nw">${esc(tid(t))}</td><td class="title">${esc(t.title)}</td><td class="nw">${esc(person(t.who).name)}</td><td><span class="st ${st.replace(/\s/g, '')}">${st}</span></td>
+    return `<tr class="${isClosed(t) ? 'done' : ''}" ${canEdit() && ix >= 0 ? `data-drag="t:${t.id}" draggable="true"` : ''}>${canEdit() ? `<td class="nw">${ix >= 0 ? ordCtl('t:' + t.id, ix, oi.length) : '<span class="muted small">✓</span>'}</td>` : ''}<td class="idc nw">${esc(tid(t))}</td><td class="title">${esc(t.title)}</td><td class="nw">${esc(person(t.who).name)}</td><td><span class="st ${st.replace(/\s/g, '')}">${st}</span></td>
       <td class="num nw">${num(effOf(t))}${isAuto(t) ? '<span class="auto">auto</span>' : ''}</td><td class="num nw">${t.ext ? `+${num(t.ext)}` : '—'}${xs.length ? ` <span class="muted small">(${xs.length})</span>` : ''}</td><td class="num" data-wn="${t.id}">${num(worked(t))}</td>
       <td><span class="prog"><span class="track"><i style="width:${pct(t)}%"></i></span>${pct(t)}%</span></td><td class="nw">${sK ? fS(sK) : '—'}</td><td class="nw">${cK ? fS(cK) : '—'}</td><td class="nw">${durTxt}</td>
       <td>${r.cls ? `<span class="tag ${r.cls}">${r.txt}</span>` : `<span class="muted small">${r.txt}</span>`}</td>${canEdit() ? `<td class="nw">${t.status === 'Por empezar' ? `<button class="lnk" data-edit="${t.id}">Editar</button>` : ''}</td>` : ''}</tr>`; }).join('')
-    || `<tr><td colspan="13" class="muted">Este proyecto todavía no tiene tareas.</td></tr>`;
+    || `<tr><td colspan="14" class="muted">Este proyecto todavía no tiene tareas.</td></tr>`;
   return h + '</tbody></table></div></section>';
 }
 
@@ -1384,6 +1430,8 @@ document.addEventListener('click', async e => {
   if (c('#wk-today')) { V.week = 0; render(); return; }
   const chip = c('.chip[data-f]'); if (chip) { V.filter = chip.dataset.f; render(); return; }
   const pchip = c('.chip[data-pf]'); if (pchip) { V.pfilter = pchip.dataset.pf; render(); return; }
+  const mo = c('[data-mv]'); if (mo) { await act(() => moveBy(mo.dataset.mv, +mo.dataset.d), 'Orden actualizado. El plan se reacomodó.'); return; }
+  if (c('[data-autorank]')) { V.confirm = { title: 'Ordenar automático', text: 'Los proyectos activos se ordenan por prioridad y Delivery Date, y las tareas de cada proyecto por el orden en que se crearon. Después puede ajustar a mano.', ok: 'Ordenar', fn: autoRankAll, done: 'Orden actualizado.' }; V.modal = 'confirm'; renderModals(); return; }
   const op = c('[data-openp]'); if (op) { V.proj = op.dataset.openp ? +op.dataset.openp : null; render(); window.scrollTo(0, 0); return; }
   // proyectos y reporte
   if (c('[data-addp]')) { openAdd(null, null, { kind: 'project' }); return; }
@@ -1398,7 +1446,10 @@ document.addEventListener('click', async e => {
   const blk = c('.blk[data-id]'); if (blk) { const row = document.getElementById('row-' + blk.dataset.id); if (row) { row.classList.remove('flash'); void row.offsetWidth; row.classList.add('flash'); row.scrollIntoView({ behavior: 'smooth', block: 'center' }); } return; }
   // tareas
   const st = c('[data-start]'); if (st) { const tk = S.tasks.find(x => x.id === +st.dataset.start), cur = running(tk.who);
-    if (cur && cur.id !== tk.id) { V.confirm = { title: 'Cambiar de tarea', text: `«${esc(cur.title)}» quedará en pausa con ${hh(remaining(cur))} pendientes, y empieza a correr «${esc(tk.title)}».`, ok: 'Cambiar de tarea', fn: () => startTask(tk), done: 'El reloj de la nueva tarea empezó.' }; V.modal = 'confirm'; renderModals(); return; }
+    const nx = plan(tk.who).q.find(t => t.status !== 'En curso'), skip = nx && nx.id !== tk.id;   // se puede saltar el orden, pero se avisa
+    if ((cur && cur.id !== tk.id) || skip) { V.confirm = { title: skip ? 'Saltarse el orden' : 'Cambiar de tarea',
+      text: `${skip ? `La siguiente según el orden es «${esc(nx.title)}». ` : ''}${cur && cur.id !== tk.id ? `«${esc(cur.title)}» quedará en pausa con ${hh(remaining(cur))} pendientes. ` : ''}¿Empezar «${esc(tk.title)}»?`,
+      ok: `Empezar «${esc(tk.title)}»`, fn: () => startTask(tk), done: 'El reloj de la nueva tarea empezó.' }; V.modal = 'confirm'; renderModals(); return; }
     await act(() => startTask(tk), 'El reloj empezó a correr.'); return; }
   const pa = c('[data-pause]'); if (pa) { const tk = S.tasks.find(x => x.id === +pa.dataset.pause); await act(() => pauseTask(tk), 'Tarea en pausa.'); return; }
   const fi = c('[data-finish]'); if (fi) { const tk = S.tasks.find(x => x.id === +fi.dataset.finish);
@@ -1430,14 +1481,15 @@ document.addEventListener('click', async e => {
       const fields = { title: d.title.trim(), who: d.who, prio: d.prio, effort: manual ? Math.round(d.effort * 2) / 2 : 0, type: isP ? PROJ : d.type, delivery: d.delivery || '',
         req: (d.req || '').trim(), devops: d.devops, obs: (d.obs || '').trim(), project: isP ? null : d.project || null };
       V.modal = null; V.err = null;
-      if (d.id) await act(() => DB.setTask(d.id, fields), 'Cambios guardados. El plan se reacomodó.');
+      if (d.id) { const old = [...S.tasks, ...S.projects].find(x => x.id === d.id); if (!isP && old && old.project !== fields.project) fields.rank = nextRank(tasksOf(fields.project));
+        await act(() => DB.setTask(d.id, fields), 'Cambios guardados. El plan se reacomodó.'); }
       else if (isP) await act(async () => {                       // primero el proyecto, luego sus tareas en orden
-        const pr = await DB.addTask({ ...fields, ext: 0, worked: 0, runFrom: null, status: 'Activo', closed: null, delivered: '' });
-        for (const r of rows) await DB.addTask({ title: r.title.trim(), who: r.who, prio: fields.prio, effort: +r.effort > 0 ? Math.round(r.effort * 2) / 2 : 0, type: 'Task', delivery: fields.delivery, req: fields.req, devops: '', obs: '',
+        const pr = await DB.addTask({ ...fields, rank: nextRank(activeProjects()), ext: 0, worked: 0, runFrom: null, status: 'Activo', closed: null, delivered: '' });
+        let n = 0; for (const r of rows) await DB.addTask({ rank: ++n, title: r.title.trim(), who: r.who, prio: fields.prio, effort: +r.effort > 0 ? Math.round(r.effort * 2) / 2 : 0, type: 'Task', delivery: fields.delivery, req: fields.req, devops: '', obs: '',
           project: pr.id, ext: 0, worked: 0, runFrom: null, status: 'Por empezar', closed: null, delivered: '', started: null });
         V.tab = 'Proyectos'; V.proj = pr.id;
       }, `Proyecto creado con ${rows.length} tarea${rows.length === 1 ? '' : 's'}.`);
-      else await act(() => DB.addTask({ ...fields, ext: 0, worked: 0, runFrom: null, status: 'Por empezar', closed: null, delivered: '' }), `Tarea agregada a «Por empezar» de ${d.who}.`);
+      else await act(() => DB.addTask({ ...fields, rank: nextRank(tasksOf(fields.project)), ext: 0, worked: 0, runFrom: null, status: 'Por empezar', closed: null, delivered: '' }), `Tarea agregada al final del proyecto y a «Por empezar» de ${d.who}.`);
       return; }
   }
   // selector de horas
@@ -1466,6 +1518,15 @@ document.addEventListener('input', e => {
   if (e.target.classList.contains('r-hours') || e.target.classList.contains('r-title')) { readRows(); syncRows(); }
   if (e.target.id === 'x-explic' || e.target.id === 'x-pend') countChars();
 });
+// Arrastrar para ordenar (proyectos en la lista, tareas en el detalle del proyecto)
+let DRAG = null;
+const clearDrop = () => document.querySelectorAll('.drop-b,.drop-a').forEach(x => x.classList.remove('drop-b', 'drop-a'));
+document.addEventListener('dragstart', e => { const el = e.target.closest && e.target.closest('[data-drag]'); if (!el) return; DRAG = el.dataset.drag; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', DRAG); el.classList.add('dragging'); });
+document.addEventListener('dragend', () => { DRAG = null; clearDrop(); document.querySelectorAll('.dragging').forEach(x => x.classList.remove('dragging')); });
+document.addEventListener('dragover', e => { const el = e.target.closest && e.target.closest('[data-drag]'); if (!el || !DRAG || el.dataset.drag[0] !== DRAG[0] || el.dataset.drag === DRAG) return;
+  e.preventDefault(); const r = el.getBoundingClientRect(); clearDrop(); el.classList.add(e.clientY > r.top + r.height / 2 ? 'drop-a' : 'drop-b'); });
+document.addEventListener('drop', async e => { const el = e.target.closest && e.target.closest('[data-drag]'); if (!el || !DRAG) return; e.preventDefault();
+  const src = DRAG, after = el.classList.contains('drop-a'); DRAG = null; clearDrop(); await act(() => moveTo(src, el.dataset.drag, after), 'Orden actualizado. El plan se reacomodó.'); });
 document.addEventListener('change', e => {
   const bf = e.target.closest('.f.bad'); if (bf) bf.classList.remove('bad');
   if (e.target.id === 'a-proj') { readDraft(); const d = V.draft, pr = S.projects.find(p => p.id === d.project);   // al elegir proyecto hereda prioridad, fecha y solicitante
