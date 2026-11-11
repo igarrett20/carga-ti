@@ -507,6 +507,57 @@ body.busy .btn{pointer-events:none;opacity:.6}
 .ext textarea,.ext input{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line-strong);border-radius:8px;padding:8px 10px;width:100%}
 .retbox{border:1px solid var(--pend);background:var(--pend-soft);border-radius:12px;padding:14px 16px;margin-bottom:18px}
 .retbox h3{margin:0 0 6px;font-size:15px;color:var(--warn-ink)}
+/* ---------- Notas ---------- */
+.nbar{display:flex;align-items:flex-end;gap:6px;flex-wrap:wrap;margin-bottom:-1px;position:relative}
+.nh{appearance:none;border:1px solid var(--line-strong);background:var(--bg);border-radius:10px 10px 0 0;padding:7px 12px;font-size:13.5px;font-weight:600;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;gap:7px;max-width:230px}
+.nh span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nh i,.ndotc{width:12px;height:12px;border-radius:4px;background:var(--pc);border:1px solid rgba(0,0,0,.2);flex:none;display:inline-block;vertical-align:-1px;margin-right:6px}
+.nh i{margin:0}
+.nh[aria-selected="true"]{color:#1B2A33;background:var(--pc);border-color:var(--line-strong);border-bottom-color:transparent}
+.nh.add{border-style:dashed;margin-left:4px}
+.nh.ret{opacity:.6}
+.ntool{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:8px 10px;border:1px solid var(--line);background:var(--sunk);border-radius:0 12px 0 0}
+.ntool .g{display:flex;gap:3px;align-items:center;flex-wrap:wrap}
+.ntool button{appearance:none;border:1px solid transparent;background:none;border-radius:6px;min-width:30px;height:30px;padding:0 8px;cursor:pointer;color:var(--ink);font-size:13.5px}
+.ntool button:hover{background:var(--bg);border-color:var(--line-strong)}
+.lbl{font-size:12px;color:var(--muted);margin-right:4px}
+button.sw{appearance:none;width:22px;min-width:22px;height:22px;padding:0;border-radius:50%;border:1px solid rgba(0,0,0,.25);cursor:pointer}
+button.sw.sq{border-radius:5px}
+button.sw[aria-pressed="true"]{outline:2px solid var(--brand);outline-offset:2px}
+.paper{background:var(--pc);border:1px solid var(--line);border-top:0;border-radius:0 0 12px 12px;padding:22px 26px;color:#1B2A33}
+.paper.ro{border-top:1px solid var(--line);border-radius:0 12px 12px 12px}
+.ntitle{font:inherit;font-size:20px;font-weight:700;color:#1B2A33;background:transparent;border:0;border-bottom:1px dashed rgba(0,0,0,.2);width:100%;padding:2px 0 6px;margin:0 0 12px;outline:none}
+.paper h3.ntitle{border-bottom-style:solid}
+.ned{min-height:55vh;outline:none;font-size:16px;line-height:1.65;overflow-wrap:anywhere}
+.paper.ro .ned{min-height:120px}
+.ned:empty::before{content:attr(data-placeholder);color:rgba(27,42,51,.45)}
+.ned h2{font-size:20px;margin:.6em 0 .3em}.ned h3{font-size:17px;margin:.5em 0 .2em}
+.ned p{margin:0 0 .5em}.ned ul,.ned ol{padding-left:26px;margin:.3em 0}
+.nopts{display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap;margin-top:12px}
+.nopts .g{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.nopts .btn{margin-left:auto}
+.nstat{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--muted);margin-top:8px;flex-wrap:wrap}
+.nstat .bad{color:var(--danger);font-weight:600}
+.nmode{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;margin-bottom:18px}
+.nmode p{margin:0}
+.ndot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#2E9E5B;margin-right:6px;box-shadow:0 0 0 3px rgba(46,158,91,.25)}
+.ndays{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:16px}
+.nday{appearance:none;flex:none;border:1px solid var(--line-strong);background:var(--bg);border-radius:10px;padding:6px 10px;cursor:pointer;font-size:12.5px;color:var(--muted);text-align:center;min-width:76px}
+.nday b{display:block;color:var(--ink);font-size:13px}
+.nday[aria-pressed="true"]{border-color:var(--brand);box-shadow:inset 0 0 0 1px var(--brand);color:var(--brand)}
+.nday.zero{opacity:.55}
+.ntl{position:relative;height:72px;border:1px solid var(--line);border-radius:10px;background:var(--sunk);overflow:hidden}
+.ntl b{position:absolute;bottom:0;min-width:3px;border-radius:2px 2px 0 0;background:var(--brand)}
+.ntl-h{position:relative;height:20px;font-size:11px;color:var(--muted);margin-bottom:22px}
+.ntl-h span{position:absolute;top:3px;transform:translateX(-50%);white-space:nowrap}
+.ntl-h span:first-child{transform:none}.ntl-h span:last-child{transform:translateX(-100%)}
+.nwrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin-bottom:8px}
+.nses{width:100%;border-collapse:collapse;font-size:14px;min-width:620px}
+.nses th,.nses td{text-align:left;padding:9px 12px;border-top:1px solid var(--line);white-space:nowrap}
+.nses tr:first-child th{border-top:0}
+.nses th{font-size:12.5px;color:var(--muted);font-weight:600}
+.nmeta{font-size:12.5px;color:var(--muted);margin-top:8px}
+@media (max-width:720px){.paper{padding:16px}.ntool{gap:6px 8px}.nopts .btn{margin-left:0}}
 </style>
 </head>
 <body>
@@ -543,7 +594,10 @@ const CONFIG = {
     feriados:    { site: 'rrhh', name: 'Feriados' },
     personal:    { site: 'rrhh', name: 'Personal' },       // de aquí sale el cumpleaños (día libre)
   },
-  proofLibrary: 'Pruebas TI',                           // biblioteca de documentos (sitio TI) donde se guardan las imágenes de pruebas
+  proofLibrary: 'Pruebas TI',
+  // Módulo Notas: cuaderno de TI. Mientras abierto = false, solo lo ven los «probadores» (con selector Colaborador / Admin).
+  // Con abierto = true: Jarreth y Kendel escriben en sus hojas; Ian y Carolyn ven el reporte (TI no ve el reporte).
+  notas: { lista: 'TI Notas', abierto: false, probadores: ['Ian'], pausaMin: 5, diasHistorial: 120 },                           // biblioteca de documentos (sitio TI) donde se guardan las imágenes de pruebas
 
   // Nombres internos de las columnas del sistema de vacaciones (por si algún día cambian allá)
   vacCols: {
@@ -633,7 +687,7 @@ const APPR_MAILS = () => CONFIG.approvers.map(p => p.email);
 // tarea: {id, devops, type, title, who, prio, rank (Orden manual), effort (0 = automática), ext, worked, runFrom(ms|null), status, created(ms), started(ms|null), closed(ms|null), obs, delivery(k), delivered(k), req, project(id|null)}
 // proyecto: mismos campos, con type = PROJ; effort = horas estimadas del proyecto
 // extensión: {id, taskId, who, hours, motivo, explic, pend, newDate, status:'Pendiente'|'Aprobada', approvedHours, approvedBy, approvedAt, comment, created}
-let S = { tasks: [], projects: [], exts: [], meet: [], vac: [], hol: { ...DEFAULT_HOL } };
+let S = { tasks: [], projects: [], exts: [], meet: [], vac: [], hol: { ...DEFAULT_HOL }, notas: [] };
 const V = { me: null, tab: null, week: 0, filter: 'open', pfilter: 'open', proj: null, rep: null, modal: null, draft: null, alarmStep: 'ask', alarmFor: null, confirm: null, busy: false };
 
 /* ---------- Disponibilidad ---------- */
@@ -868,6 +922,7 @@ const Live = {
       G.lp[key] = `/sites/${G.siteIds[site]}/lists/${f.id}`;
     }
     await this.checkSchema(found.ti || []);
+    try { await Notas.connect(found.ti || []); } catch (e) { console.warn('Notas', e); NT.err = 'No se pudo preparar la lista de notas: ' + (e.message || e); }
   },
   // Revisa columnas y la biblioteca de pruebas. Si falta algo y entró Ian o Carolyn, lo crea.
   async checkSchema(tiLists) {
@@ -911,6 +966,7 @@ const Live = {
     catch (e) { console.warn('Personal', e); toast('No se pudieron leer los cumpleaños de la lista Personal: ' + (e.message || e)); }
     S.vac = vac;
     try { await loadSchedule(); } catch (e) { console.warn('Calendario de Teams', e); toast('No se pudo leer el calendario de Teams: ' + (e.message || e)); }
+    if (canNotas()) { try { await Notas.load(); } catch (e) { console.warn('Notas', e); NT.err = 'No se pudieron leer las notas: ' + (e.message || e); } }
   },
   async addTask(t) { const r = await gx('POST', `${G.lp.tareas}/items`, { fields: T_OUT(t) }); t.id = +r.id; t.created = Date.parse(r.createdDateTime); (t.type === PROJ ? S.projects : S.tasks).push(t); return t; },
   async setTask(id, patch) { const t = [...S.tasks, ...S.projects].find(x => x.id === id); Object.assign(t, patch); await gx('PATCH', `${G.lp.tareas}/items/${id}/fields`, T_OUT(t)); },
@@ -1074,7 +1130,7 @@ function renderHeader() {
 }
 function renderTabs() {
   const n = pendingExts().length;
-  const items = [...CONFIG.it.map(p => [p.key, p.key, `<span class="av">${p.key[0]}</span>`]), ['Proyectos', 'Proyectos', ''], ['Equipo', 'Equipo', '<span class="av">TI</span>'], ['Extensiones', 'Extensiones', '']];
+  const items = [...CONFIG.it.map(p => [p.key, p.key, `<span class="av">${p.key[0]}</span>`]), ['Proyectos', 'Proyectos', ''], ['Equipo', 'Equipo', '<span class="av">TI</span>'], ['Extensiones', 'Extensiones', ''], ...(canNotas() ? [['Notas', 'Notas', '']] : [])];
   $('#tabs').innerHTML = items.map(([k, label, ic]) => `<button class="tab" role="tab" id="tab-${k}" aria-selected="${V.tab === k}">${ic}${label}${k === 'Extensiones' && n ? `<b>${n}</b>` : ''}</button>`).join('');
 }
 
@@ -1569,6 +1625,235 @@ function confirmModal(c) {
   return `<div class="ovl" id="ovl-conf"><div class="dlg sm" role="dialog" aria-modal="true" aria-labelledby="cf-h"><div class="body"><h2 id="cf-h" style="font-size:19px;margin:0 0 8px">${c.title}</h2><p class="muted" style="margin:0">${c.text}</p></div>
     <footer><span></span><span class="minirow"><button class="btn" data-close>Cancelar</button><button class="btn primary" data-ok>${c.ok}</button></span></footer></div></div>`;
 }
+/* =====================================================================
+   NOTAS — cuaderno de hojas de colores para TI y reporte de escritura (Ian y Carolyn)
+   Cada hoja es un elemento de la lista «TI Notas». La actividad (cuándo y cuánto escribe)
+   se guarda en la misma hoja, por sesiones: una sesión termina tras CONFIG.notas.pausaMin sin escribir.
+   ===================================================================== */
+const NOTA_PAPEL = [['amarillo', 'Amarillo', '#FFF7C2'], ['blanco', 'Blanco', '#FFFFFF'], ['verde', 'Verde', '#E2F4DF'], ['celeste', 'Celeste', '#DDEEFA'],
+  ['rosado', 'Rosado', '#FCE1EA'], ['lila', 'Lila', '#ECE3F9'], ['naranja', 'Naranja', '#FFE6CC'], ['gris', 'Gris', '#ECEFF1']];
+const NOTA_TINTA = [['#1B2A33', 'Negro'], ['#D23B3B', 'Rojo'], ['#D9730D', 'Naranja'], ['#2E8B57', 'Verde'], ['#2F6FD6', 'Azul'], ['#8B4FC9', 'Morado']];
+const NOTA_RESALTE = [['#FFF176', 'Amarillo'], ['#B9F6CA', 'Verde'], ['#B3E5FC', 'Celeste'], ['#F8BBD0', 'Rosado'], ['transparent', 'Sin resaltar']];
+const papel = c => (NOTA_PAPEL.find(p => p[0] === c) || NOTA_PAPEL[0])[2];
+const NOTA_COLS = [['Autor', txt], ['Color', txt], ['Contenido', multi], ['Orden', num0], ['Actividad', multi], ['Retirada', dTime]];
+const NT = { mode: 'colab', sel: null, per: null, day: null, see: null, dirty: new Set(), t: null, saving: false, savedAt: null, saveErr: null, words: 0, len: 0, pasting: 0, err: null, bigWarn: false };
+const myMail = () => G.me ? lc(G.me.mail || G.me.userPrincipalName) : '';
+const nameOf = m => ([...CONFIG.it, ...CONFIG.approvers].find(p => lc(p.email) === lc(m)) || {}).name || m;
+const notaTester = () => !!V.me && !CONFIG.notas.abierto && CONFIG.notas.probadores.includes(V.me.key);
+const canNotas = () => !!V.me && (CONFIG.notas.probadores.includes(V.me.key) || (CONFIG.notas.abierto && (V.me.role === 'it' || V.me.role === 'appr')));
+const notaMode = () => notaTester() ? NT.mode : (V.me.role === 'appr' ? 'admin' : 'colab');
+const wcount = s => (String(s || '').trim().match(/\S+/g) || []).length;
+const fmtN = x => Math.round(x).toLocaleString('es-CR');
+const actMin = s => (s.b || []).filter(x => x > 0).length;
+
+// Limpia el contenido: solo deja formato de texto (negrita, listas, colores…). Quita scripts, imágenes y enlaces.
+const N_TAGS = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'S', 'STRIKE', 'UL', 'OL', 'LI', 'H2', 'H3', 'P', 'DIV', 'BR', 'SPAN', 'FONT', 'BLOCKQUOTE']);
+const N_DROP = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'SVG', 'MATH', 'TEMPLATE', 'IMG', 'VIDEO', 'AUDIO', 'LINK', 'META', 'FORM', 'INPUT', 'BUTTON', 'TEXTAREA', 'SELECT']);
+function clean(html) {
+  const tpl = document.createElement('template'); tpl.innerHTML = String(html || '');
+  const walk = node => [...node.childNodes].forEach(ch => {
+    if (ch.nodeType === 3) return;
+    if (ch.nodeType !== 1 || N_DROP.has(ch.tagName)) { ch.remove(); return; }
+    walk(ch);
+    if (!N_TAGS.has(ch.tagName)) { ch.replaceWith(...ch.childNodes); return; }
+    const s = ch.style || {}, keep = [['color', s.color], ['background-color', s.backgroundColor], ['font-weight', s.fontWeight], ['font-style', s.fontStyle], ['text-decoration-line', s.textDecorationLine || s.textDecoration]]
+      .filter(([, v]) => v && /^[\w\s#(),.%-]+$/.test(v) && !/url|expression/i.test(v));
+    const fc = ch.tagName === 'FONT' ? ch.getAttribute('color') : null;
+    [...ch.attributes].forEach(a => ch.removeAttribute(a.name));
+    if (keep.length) ch.setAttribute('style', keep.map(([k, v]) => `${k}:${v}`).join(';'));
+    if (fc && /^#?\w+$/.test(fc)) ch.setAttribute('color', fc);
+  });
+  walk(tpl.content); return tpl.innerHTML;
+}
+const N_IN = i => { const f = i.fields; return { id: +i.id, titulo: f.Title || 'Hoja', autor: lc(f.Autor), color: f.Color || 'amarillo', html: f.Contenido || '', orden: +f.Orden || 0, act: jparse(f.Actividad),
+  retirada: f.Retirada ? Date.parse(f.Retirada) : null, mod: Date.parse(i.lastModifiedDateTime || i.createdDateTime), created: Date.parse(i.createdDateTime) }; };
+const N_OUT = n => pick('notas', { Title: String(n.titulo || 'Hoja').slice(0, 120), Autor: n.autor, Color: n.color, Contenido: clean(n.html), Orden: n.orden || 0,
+  Actividad: JSON.stringify(n.act || []), Retirada: n.retirada ? new Date(n.retirada).toISOString() : null });
+
+const Notas = {
+  // Busca la lista «TI Notas»; si no existe y entró Ian o Carolyn, la crea con sus columnas.
+  async connect(tiLists) {
+    const C = CONFIG.notas, admin = !!approverBy(myMail());
+    let l = tiLists.find(x => lc(x.displayName) === lc(C.lista) || lc(x.name) === lc(C.lista));
+    if (!l && admin) { l = await gxAdmin('POST', `/sites/${G.siteIds.ti}/lists`, { displayName: C.lista, columns: NOTA_COLS.map(([n, d]) => ({ name: n, displayName: n, ...d })), list: { template: 'genericList' } }); }
+    if (!l) { NT.err = `No encuentro la lista «${C.lista}» en el sitio ${CONFIG.sites.ti}. Se crea sola la próxima vez que Ian o Carolyn abran la página.`; return; }
+    G.lp.notas = `/sites/${G.siteIds.ti}/lists/${l.id}`;
+    const have = new Set((await gx('GET', `${G.lp.notas}/columns?$select=name&$top=500`)).value.map(c => c.name));
+    if (admin) for (const [n, d] of NOTA_COLS) if (!have.has(n)) { await gxAdmin('POST', `${G.lp.notas}/columns`, { name: n, displayName: n, ...d }); have.add(n); }
+    G.cols.notas = have;
+    const miss = NOTA_COLS.map(c => c[0]).filter(n => !have.has(n));
+    if (miss.length) G.missing.push(...miss.map(n => `${C.lista} → ${n}`));
+  },
+  async load() {
+    if (!G.lp.notas) return;
+    const items = (await allItems('notas')).map(N_IN).filter(n => n.autor);
+    S.notas = items.map(n => NT.dirty.has(n.id) || (NT.saving && n.id === NT.sel) ? (S.notas.find(k => k.id === n.id) || n) : n);
+  },
+  async add(n) { const r = await gx('POST', `${G.lp.notas}/items`, { fields: N_OUT(n) }); n.id = +r.id; n.mod = n.created = Date.parse(r.createdDateTime); S.notas.push(n); return n; },
+  async set(id, patch) { const n = S.notas.find(x => x.id === id); Object.assign(n, patch); await gx('PATCH', `${G.lp.notas}/items/${id}/fields`, N_OUT(n)); n.mod = Date.now(); NT.dirty.delete(id); },
+  // Guarda lo que haya pendiente (se llama sola 1,5 s después de dejar de escribir)
+  async flush() {
+    clearTimeout(NT.t); NT.t = null;
+    if (NT.saving || !NT.dirty.size) return;
+    NT.saving = true; saveLbl();
+    try {
+      for (const id of [...NT.dirty]) {
+        const n = S.notas.find(x => x.id === id); NT.dirty.delete(id); if (!n) continue;
+        const ed = document.getElementById('ned');
+        if (ed && NT.sel === id) { n.html = ed.innerHTML; NT.words = wcount(ed.innerText); wordsLbl(); const s = n.act[n.act.length - 1]; if (s) s.w1 = NT.words; }
+        n.act = n.act.filter(s => Date.now() - s.e < CONFIG.notas.diasHistorial * 864e5).slice(-400);
+        const body = N_OUT(n);
+        if ((body.Contenido || '').length > 60000 && !NT.bigWarn) { NT.bigWarn = true; toast('Esta hoja ya está muy larga. Para que se siga guardando bien, siga en una hoja nueva.'); }
+        try { await gx('PATCH', `${G.lp.notas}/items/${id}/fields`, body); n.mod = Date.now(); }
+        catch (e) { NT.dirty.add(id); throw e; }
+      }
+      NT.savedAt = Date.now(); NT.saveErr = null;
+    } catch (e) {
+      console.warn('Notas', e);
+      NT.saveErr = e.status === 403 ? 'No tiene permiso para guardar en la lista de notas.' : 'No se pudo guardar. Se vuelve a intentar en unos segundos…';
+      if (e.message !== 'redirect') NT.t = setTimeout(() => Notas.flush(), 10000);
+    } finally { NT.saving = false; saveLbl(); if (NT.dirty.size && !NT.t) NT.t = setTimeout(() => Notas.flush(), 1500); }
+  },
+};
+function saveLbl() {
+  const el = document.getElementById('nsave'); if (!el) return;
+  el.className = NT.saveErr ? 'bad' : '';
+  el.textContent = NT.saveErr || (NT.saving || NT.dirty.size ? 'Guardando…' : NT.savedAt ? `Guardado ${fT12(hOf(NT.savedAt).h)}` : 'Se guarda solo mientras escribe');
+}
+function wordsLbl() { const el = document.getElementById('nwords'); if (el) el.textContent = `${fmtN(NT.words)} palabra${NT.words === 1 ? '' : 's'}`; }
+function notasAfter() { const ed = document.getElementById('ned'); if (ed) { NT.len = ed.textContent.length; NT.words = wcount(ed.innerText); } wordsLbl(); saveLbl(); }
+async function notasRefresh(msg) {
+  try { await Notas.load(); V.syncedAt = Date.now(); render(); if (msg) toast('Notas actualizadas.'); }
+  catch (e) { console.warn(e); if (msg) toast('No se pudieron leer las notas: ' + (e.message || e)); }
+}
+
+/* ---------- Vistas ---------- */
+const misHojas = () => S.notas.filter(n => n.autor === myMail() && !n.retirada).sort((a, b) => a.orden - b.orden || a.id - b.id);
+function notasView() {
+  const top = notaTester() ? `<div class="nmode"><div class="seg" role="radiogroup" aria-label="Vista de prueba">${[['colab', 'Colaborador (prueba)'], ['admin', 'Admin (prueba)']]
+    .map(([k, l]) => `<button role="radio" aria-checked="${NT.mode === k}" data-nmode="${k}">${l}</button>`).join('')}</div>
+    <p class="small muted">Modo de prueba: solo usted ve este módulo. En «Colaborador» escribe como ${esc(V.me.name)} y sus hojas salen en el reporte con su nombre.</p></div>` : '';
+  if (!G.lp.notas) return top + `<div class="empty-big"><b>Las notas no están disponibles</b>${esc(NT.err || 'Todavía se está conectando con SharePoint.')}</div>`;
+  return top + (notaMode() === 'admin' ? notasAdmin() : notasColab());
+}
+function notasColab() {
+  const mine = misHojas();
+  if (!mine.some(n => n.id === NT.sel)) NT.sel = mine.length ? mine[0].id : null;
+  const h = mine.find(n => n.id === NT.sel);
+  const tabs = `<div class="nbar" role="tablist" aria-label="Hojas">${mine.map(n => `<button class="nh" role="tab" data-nh="${n.id}" aria-selected="${n.id === NT.sel}" style="--pc:${papel(n.color)}"><i></i><span>${esc(n.titulo)}</span></button>`).join('')}<button class="nh add" data-nnew>+ Hoja nueva</button></div>`;
+  if (!h) return `<div class="empty-big"><b>Su cuaderno está vacío</b>Cree una hoja para empezar a escribir. Puede tener varias, cada una de un color.<div style="margin-top:14px"><button class="btn primary" data-nnew>Crear la primera hoja</button></div></div>`;
+  const B = (cmd, label, title, val = '') => `<button type="button" data-cmd="${cmd}"${val ? ` data-val="${val}"` : ''} title="${title}" aria-label="${title}">${label}</button>`;
+  const tool = `<div class="ntool" role="toolbar" aria-label="Formato">
+    <span class="g">${B('bold', '<b>N</b>', 'Negrita')}${B('italic', '<i>K</i>', 'Cursiva')}${B('underline', '<u>S</u>', 'Subrayado')}${B('strikeThrough', '<s>T</s>', 'Tachado')}</span>
+    <span class="g">${B('formatBlock', 'Título', 'Título', 'H2')}${B('formatBlock', 'Texto', 'Texto normal', 'P')}${B('insertUnorderedList', '• Lista', 'Lista con viñetas')}${B('insertOrderedList', '1. Lista', 'Lista numerada')}</span>
+    <span class="g"><span class="lbl">Letra</span>${NOTA_TINTA.map(([c, n]) => `<button type="button" class="sw" data-cmd="foreColor" data-val="${c}" title="Letra ${n.toLowerCase()}" aria-label="Letra ${n.toLowerCase()}" style="background:${c}"></button>`).join('')}</span>
+    <span class="g"><span class="lbl">Resaltar</span>${NOTA_RESALTE.map(([c, n]) => `<button type="button" class="sw sq" data-cmd="hiliteColor" data-val="${c}" title="Resaltar: ${n.toLowerCase()}" aria-label="Resaltar: ${n.toLowerCase()}" style="background:${c === 'transparent' ? 'linear-gradient(135deg,#fff 44%,#D23B3B 44% 56%,#fff 56%)' : c}"></button>`).join('')}</span>
+    <span class="g">${B('removeFormat', 'Quitar formato', 'Quitar formato')}</span></div>`;
+  return tabs + tool + `<div class="paper" style="--pc:${papel(h.color)}">
+      <input class="ntitle" id="ntitle" value="${esc(h.titulo)}" maxlength="120" aria-label="Nombre de la hoja">
+      <div class="ned" id="ned" contenteditable="true" spellcheck="true" role="textbox" aria-multiline="true" aria-label="Contenido de la hoja" data-placeholder="Escriba aquí…">${clean(h.html)}</div></div>
+    <div class="nstat"><span id="nsave"></span><span id="nwords"></span></div>
+    <div class="nopts"><span class="g"><span class="lbl">Color de la hoja</span>${NOTA_PAPEL.map(([k, n, c]) => `<button type="button" class="sw sq" data-npaper="${k}" aria-pressed="${h.color === k}" title="${n}" aria-label="Hoja color ${n.toLowerCase()}" style="background:${c}"></button>`).join('')}</span>
+      <button class="btn ghost-red" data-ndel>Retirar hoja</button></div>`;
+}
+function notasAdmin() {
+  const now = Date.now(), today = K(new Date(now)), dayOf = ms => K(new Date(ms));
+  if (!NT.day) NT.day = today;
+  const people = [...new Set([...CONFIG.it.map(p => lc(p.email)), ...S.notas.map(n => n.autor)])];
+  if (!people.includes(NT.per)) NT.per = people[0];
+  const lastOf = p => S.notas.filter(n => n.autor === p).flatMap(n => n.act.map(s => ({ e: s.e, n }))).sort((a, b) => b.e - a.e)[0];
+  const live = p => { const l = lastOf(p); return l && now - l.e < 2 * 60e3 ? l : null; };
+  const chips = `<div class="chips" style="margin-bottom:16px">${people.map(p => `<button class="chip" data-nper="${esc(p)}" aria-pressed="${p === NT.per}">${live(p) ? '<span class="ndot" title="Escribiendo ahora"></span>' : ''}${esc(nameOf(p))}${approverBy(p) ? ' (prueba)' : ''}</button>`).join('')}</div>`;
+  const name = nameOf(NT.per);
+  const hojas = S.notas.filter(n => n.autor === NT.per).sort((a, b) => (!!a.retirada - !!b.retirada) || a.orden - b.orden || a.id - b.id);
+  const ses = hojas.flatMap(n => n.act.map(s => ({ ...s, n })));
+  const sum = list => { const m = list.reduce((a, s) => a + actMin(s), 0), c = list.reduce((a, s) => a + (s.c || 0), 0);
+    return { m, c, p: list.reduce((a, s) => a + (s.p || 0), 0), net: list.reduce((a, s) => a + ((s.w1 ?? s.w0) - (s.w0 || 0)), 0), ppm: m ? Math.round(c / 5 / m) : 0 }; };
+  const strip = `<div class="ndays" aria-label="Últimos 14 días">${Array.from({ length: 14 }, (_, i) => addD(today, i - 13)).map(k => { const st = sum(ses.filter(s => dayOf(s.s) === k));
+    return `<button class="nday${st.m ? '' : ' zero'}" data-nday="${k}" aria-pressed="${k === NT.day}">${k === today ? 'Hoy' : fD(k)}<b>${st.m ? dur(st.m / 60) : '—'}</b></button>`; }).join('')}</div>`;
+  const ds = ses.filter(s => dayOf(s.s) === NT.day).sort((a, b) => a.s - b.s), st = sum(ds), first = ds[0], last = ds[ds.length - 1];
+  const lv = live(NT.per);
+  const liveBox = lv ? `<div class="preview" style="margin-bottom:16px"><span><span class="ndot"></span><b>${esc(name)} está escribiendo ahora</b> en la hoja «${esc(lv.n.titulo)}».</span></div>` : '';
+  const stats = `<div class="stats">
+    <div class="stat main"><span>Empezó a escribir</span><strong>${first ? fT12(hOf(first.s).h) : '—'}</strong><small>${last ? `Última vez ${fT12(hOf(last.e).h)}` : 'Sin actividad este día'}</small></div>
+    <div class="stat"><span>Tiempo escribiendo</span><strong>${dur(st.m / 60)}</strong><small>${ds.length} sesi${ds.length === 1 ? 'ón' : 'ones'}</small></div>
+    <div class="stat"><span>Ritmo</span><strong>${st.ppm} ppm</strong><small>palabras por minuto escribiendo</small></div>
+    <div class="stat"><span>Palabras nuevas</span><strong>${st.net > 0 ? '+' : ''}${fmtN(st.net)}</strong><small>${st.p ? `pegó ${fmtN(st.p)} caracteres` : 'no pegó texto'}</small></div></div>`;
+  // Línea de tiempo del día: una barra por minuto, más alta cuanto más escribió
+  const mins = {}; ds.forEach(s => (s.b || []).forEach((v, i) => { if (v > 0) { const m = Math.floor(hOf(s.s + i * 60e3).h * 60); mins[m] = (mins[m] || 0) + v; } }));
+  const ks = Object.keys(mins).map(Number), a = Math.min(8 * 60, ...ks.map(m => Math.floor(m / 60) * 60)), b = Math.max(17 * 60, ...ks.map(m => (Math.floor(m / 60) + 1) * 60)), span = b - a, mx = Math.max(1, ...Object.values(mins));
+  const step = span > 14 * 60 ? 3 : span > 10 * 60 ? 2 : 1, hrs = []; for (let h = a / 60; h <= b / 60; h += step) hrs.push(h);
+  const tl = ds.length ? `<div class="ntl" role="img" aria-label="Minutos con escritura entre ${fT12(a / 60)} y ${fT12(b / 60)}">${ks.map(m => `<b style="left:${(m - a) / span * 100}%;width:${100 / span}%;height:${Math.max(10, mins[m] / mx * 100)}%" title="${fT12(m / 60)} · ${Math.round(mins[m] / 5)} palabras"></b>`).join('')}</div>
+    <div class="ntl-h">${hrs.map(h => `<span style="left:${(h * 60 - a) / span * 100}%">${fT(h)}</span>`).join('')}</div>` : '';
+  const rows = ds.map(s => { const m = actMin(s), net = (s.w1 ?? s.w0) - (s.w0 || 0);
+    return `<tr><td>${fT12(hOf(s.s).h)} – ${fT12(hOf(s.e).h)}</td><td><span class="ndotc" style="--pc:${papel(s.n.color)}"></span>${esc(s.n.titulo)}${s.n.retirada ? ' <span class="muted">(retirada)</span>' : ''}</td>
+      <td>${m ? dur(m / 60) : '—'}</td><td>${m ? Math.round((s.c || 0) / 5 / m) : 0} ppm</td><td>${net > 0 ? '+' : ''}${fmtN(net)}</td><td>${s.p ? fmtN(s.p) : '—'}</td></tr>`; }).join('');
+  const table = ds.length ? `<div class="nwrap"><table class="nses"><tr><th>Horario</th><th>Hoja</th><th>Escribiendo</th><th>Ritmo</th><th>Palabras</th><th>Pegó (caract.)</th></tr>${rows}</table></div>`
+    : `<p class="empty">${esc(name)} no escribió el ${fS(NT.day)}.</p>`;
+  // Hojas en solo lectura
+  if (!hojas.some(n => n.id === NT.see)) NT.see = hojas.length ? hojas[0].id : null;
+  const hv = hojas.find(n => n.id === NT.see);
+  const sheets = !hojas.length ? `<p class="empty">${esc(name)} todavía no tiene hojas.</p>` : `<div class="nbar" role="tablist">${hojas.map(n => `<button class="nh${n.retirada ? ' ret' : ''}" role="tab" data-nsee="${n.id}" aria-selected="${n.id === NT.see}" style="--pc:${papel(n.color)}"><i></i><span>${esc(n.titulo)}${n.retirada ? ' (retirada)' : ''}</span></button>`).join('')}</div>
+    <div class="paper ro" style="--pc:${papel(hv.color)}"><h3 class="ntitle">${esc(hv.titulo)}</h3><div class="ned">${clean(hv.html) || '<p style="opacity:.5">(Hoja en blanco)</p>'}</div></div>
+    <p class="nmeta">Última edición ${fS(K(new Date(hv.mod)))} ${fT12(hOf(hv.mod).h)} · ${fmtN(wcount((() => { const t = document.createElement('template'); t.innerHTML = clean(hv.html).replace(/<(br|\/p|\/div|\/li|\/h[23])[^>]*>/gi, ' $&'); return t.content.textContent; })()))} palabras${hv.retirada ? ` · Retirada el ${fS(K(new Date(hv.retirada)))}` : ''}</p>`;
+  return chips + liveBox + `<div class="sec-h"><div><h2>Actividad de ${esc(name)} · ${fS(NT.day)}</h2><p>Una sesión dura mientras no pase más de ${CONFIG.notas.pausaMin} min sin escribir. Ritmo = caracteres escritos ÷ 5, por minuto activo.</p></div><button class="btn" data-nref>Actualizar</button></div>`
+    + strip + stats + tl + table + `<div class="sec-h" style="margin-top:30px"><div><h2>Hojas de ${esc(name)}</h2><p>Solo lectura. Las hojas retiradas también se ven aquí.</p></div></div>` + sheets;
+}
+
+/* ---------- Eventos de Notas ---------- */
+const inNed = e => { const t = e.target, el = t && (t.nodeType === 1 ? t : t.parentElement); return el && el.closest('#ned[contenteditable]'); };
+document.addEventListener('input', e => {
+  const ed = inNed(e); if (!ed) return;
+  const n = S.notas.find(x => x.id === NT.sel); if (!n) return;
+  const len = ed.textContent.length, dl = len - NT.len; NT.len = len;
+  const now = Date.now(), typed = NT.pasting ? 0 : Math.max(dl, 0), pasted = NT.pasting ? Math.max(dl, 0) : 0, del = Math.max(-dl, 0);
+  n.html = ed.innerHTML;
+  if (typed || pasted || del) {
+    let s = n.act[n.act.length - 1];
+    if (!s || now - s.e > CONFIG.notas.pausaMin * 60e3) { s = { s: now, e: now, w0: NT.words, w1: NT.words, c: 0, p: 0, d: 0, b: [] }; n.act.push(s); }
+    s.e = now; s.c += typed; s.p += pasted; s.d += del;
+    const mi = Math.floor((now - s.s) / 60e3); while (s.b.length <= mi) s.b.push(0); s.b[mi] += typed;
+  }
+  NT.dirty.add(n.id); clearTimeout(NT.t); NT.t = setTimeout(() => Notas.flush(), 1500); saveLbl();
+});
+document.addEventListener('paste', e => {      // se pega solo el texto (sin formato ni imágenes) y se cuenta aparte
+  if (!inNed(e)) return; e.preventDefault();
+  const t = (e.clipboardData || window.clipboardData).getData('text/plain'); if (!t) return;
+  NT.pasting = 1; try { document.execCommand('insertText', false, t); } finally { NT.pasting = 0; }
+});
+document.addEventListener('drop', e => { if (inNed(e)) e.preventDefault(); });
+document.addEventListener('mousedown', e => { if (e.target.closest && e.target.closest('.ntool button')) e.preventDefault(); });
+document.addEventListener('keydown', e => { if (e.target.id === 'ntitle' && e.key === 'Enter') { e.preventDefault(); const ed = document.getElementById('ned'); if (ed) ed.focus(); } });
+document.addEventListener('change', async e => {
+  if (e.target.id !== 'ntitle') return;
+  const n = S.notas.find(x => x.id === NT.sel), v = e.target.value.trim() || 'Hoja'; if (!n || v === n.titulo) return;
+  await Notas.flush(); await act(() => Notas.set(n.id, { titulo: v }), 'Nombre de la hoja actualizado.');
+});
+document.addEventListener('click', async e => {
+  const c = s => e.target.closest(s);
+  if (c('.tab') && NT.dirty.size) Notas.flush();
+  if (V.tab !== 'Notas' || !canNotas()) return;
+  const md = c('[data-nmode]'); if (md) { await Notas.flush(); NT.mode = md.dataset.nmode; render(); if (NT.mode === 'admin') notasRefresh(); return; }
+  const cm = c('[data-cmd]'); if (cm) { const ed = document.getElementById('ned'); if (!ed) return; if (!ed.contains(document.activeElement) && document.activeElement !== ed) ed.focus();
+    document.execCommand('styleWithCSS', false, true); document.execCommand(cm.dataset.cmd, false, cm.dataset.val || null); return; }
+  const nh = c('[data-nh]'); if (nh) { await Notas.flush(); NT.sel = +nh.dataset.nh; render(); return; }
+  if (c('[data-nnew]')) { await Notas.flush(); const mine = misHojas();
+    await act(async () => { const n = await Notas.add({ titulo: `Hoja ${mine.length + 1}`, autor: myMail(), color: NOTA_PAPEL[mine.length % NOTA_PAPEL.length][0], html: '', orden: Math.max(0, ...mine.map(x => x.orden)) + 1, act: [], retirada: null }); NT.sel = n.id; });
+    setTimeout(() => { const t = document.getElementById('ntitle'); if (t) { t.focus(); t.select(); } }, 40); return; }
+  const pc = c('[data-npaper]'); if (pc) { const id = NT.sel; await Notas.flush(); await act(() => Notas.set(id, { color: pc.dataset.npaper })); return; }
+  if (c('[data-ndel]')) { await Notas.flush(); const n = S.notas.find(x => x.id === NT.sel); if (!n) return;
+    V.confirm = { title: 'Retirar esta hoja', text: `La hoja «${esc(n.titulo)}» deja de aparecer en su cuaderno. No se borra: queda guardada como retirada y se puede consultar en el reporte.`, ok: 'Retirar hoja',
+      fn: () => Notas.set(n.id, { retirada: Date.now() }), done: 'Hoja retirada.' }; V.modal = 'confirm'; renderModals(); return; }
+  const per = c('[data-nper]'); if (per) { NT.per = per.dataset.nper; NT.see = null; render(); return; }
+  const dy = c('[data-nday]'); if (dy) { NT.day = dy.dataset.nday; render(); return; }
+  const sv = c('[data-nsee]'); if (sv) { NT.see = +sv.dataset.nsee; render(); return; }
+  if (c('[data-nref]')) { await notasRefresh(true); return; }
+});
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') Notas.flush(); });
+window.addEventListener('beforeunload', e => { if (NT.dirty.size || NT.saving) { Notas.flush(); e.preventDefault(); e.returnValue = ''; } });
+// En el reporte, las notas se actualizan solas cada 30 segundos
+setInterval(() => { if (V.tab === 'Notas' && canNotas() && notaMode() === 'admin' && !V.modal && !V.busy && !(document.activeElement && document.activeElement.closest('input,textarea,select,[contenteditable]'))) notasRefresh(); }, 30e3);
+
 /* ---------- Render principal ---------- */
 function alarmTask() { return V.me && V.me.role === 'it' && !V.stale ? S.tasks.find(t => t.who === V.me.key && status(t) === 'Tiempo agotado') : null; }
 function render() {
@@ -1576,11 +1861,13 @@ function render() {
   const N = JOR.normal, F = JOR.viernes;
   $('#lead').textContent = `Lunes a jueves de ${fT12(N.in)} a ${fT12(N.out)} con ${dur(CONFIG.jornada.normal.minutosAlmuerzo / 60)} de almuerzo (${dur(dayH('2026-01-05'))} de trabajo); viernes de ${fT12(F.in)} a ${fT12(F.out)} con ${dur(CONFIG.jornada.viernes.minutosAlmuerzo / 60)} de almuerzo (${dur(dayH('2026-01-09'))}). Se restan las reuniones de Teams, las vacaciones, los permisos y los feriados.`;
   const mineKey = V.me && V.me.role === 'it' ? V.me.key : ITK[0];
-  $('#addtop').innerHTML = !canEdit() ? '' : V.tab === 'Proyectos' ? `<span class="minirow">${isAppr() ? '<button class="btn" data-report>Descargar reporte</button>' : ''}<button class="btn primary" data-addp>+ Nuevo proyecto</button></span>`
+  if (V.tab === 'Notas' && !canNotas()) V.tab = V.me && V.me.role === 'it' ? V.me.key : 'Proyectos';
+  if (V.tab === 'Notas') $('#lead').textContent = 'Cuaderno de TI: cada quien escribe en sus hojas de colores. Se guarda solo mientras escribe.';
+  $('#addtop').innerHTML = !canEdit() || V.tab === 'Notas' ? '' : V.tab === 'Proyectos' ? `<span class="minirow">${isAppr() ? '<button class="btn" data-report>Descargar reporte</button>' : ''}<button class="btn primary" data-addp>+ Nuevo proyecto</button></span>`
     : ITK.includes(V.tab) ? '' : `<button class="btn primary" data-add="${mineKey}">+ Agregar tarea</button>`;
   const warnCols = G.missing.length ? `<div class="preview warn" style="margin-bottom:18px"><span><b>Faltan columnas en SharePoint</b> (o tienen otro nombre interno): ${G.missing.map(esc).join(', ')}. Mientras tanto, esos datos no se guardan.${isAppr() ? (G.schemaErr ? ` No se pudieron crear solas: ${esc(G.schemaErr)}` : '') : ' Se crean solas la próxima vez que Ian o Carolyn abran la página.'}</span></div>` : '';
-  view().innerHTML = warnCols + (V.tab === 'Equipo' ? teamView() : V.tab === 'Extensiones' ? extView() : V.tab === 'Proyectos' ? (S.projects.some(p => p.id === V.proj) ? projectDetail(S.projects.find(p => p.id === V.proj)) : projectsView()) : personView(V.tab));
-  hydrateProofs();
+  view().innerHTML = warnCols + (V.tab === 'Notas' ? notasView() : V.tab === 'Equipo' ? teamView() : V.tab === 'Extensiones' ? extView() : V.tab === 'Proyectos' ? (S.projects.some(p => p.id === V.proj) ? projectDetail(S.projects.find(p => p.id === V.proj)) : projectsView()) : personView(V.tab));
+  hydrateProofs(); if (V.tab === 'Notas') notasAfter();
   renderModals();
 }
 function renderModals() {
@@ -1610,7 +1897,7 @@ async function tick() {
   const exhausted = S.tasks.find(t => t.status === 'En curso' && remaining(t) <= 1e-6);
   if (exhausted && (V.me && V.me.key === exhausted.who) && !V.busy) { await act(() => timeOut(exhausted)); return; }
   const m = new Date(nowMs()).getMinutes();
-  if (m !== lastMin) { lastMin = m; const typing = document.activeElement && document.activeElement.closest('input,textarea,select'); if (!typing && !V.modal && !alarmTask()) { replan(); render(); } }
+  if (m !== lastMin) { lastMin = m; const typing = document.activeElement && document.activeElement.closest('input,textarea,select,[contenteditable]'); if (!typing && !V.modal && !alarmTask()) { replan(); render(); } }
 }
 
 /* =====================================================================
@@ -1798,7 +2085,7 @@ async function start() {
     await Live.reload(); V.stale = false; V.syncedAt = Date.now(); save(); replan(); render(); setInterval(tick, 1000);
     if (G.created) toast(`Se creó la biblioteca «${CONFIG.proofLibrary}». Revise sus permisos (ver instrucciones).`);
     if (G.schemaErr) toast('No se pudieron crear las columnas o la biblioteca: ' + G.schemaErr);
-    setInterval(async () => { if (V.busy || V.modal || alarmTask() || (document.activeElement && document.activeElement.closest('input,textarea,select'))) return;
+    setInterval(async () => { if (V.busy || V.modal || alarmTask() || (document.activeElement && document.activeElement.closest('input,textarea,select,[contenteditable]'))) return;
       try { await Live.reload(); V.syncedAt = Date.now(); save(); replan(); render(); } catch (e) { console.warn(e); } }, CONFIG.refreshMinutes * 60e3);
   } catch (e) { console.error(e); V.stale = false; if (e.message !== 'redirect') view().innerHTML = `<div class="gate"><h1>No se pudo conectar</h1><p>${esc(e.message || e)}</p><button class="btn" onclick="location.reload()">Reintentar</button></div>`; }
 }
