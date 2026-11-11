@@ -1702,6 +1702,15 @@ const N_IN = i => { const f = i.fields; return { id: +i.id, titulo: f.Title || '
 const N_OUT = n => pick('notas', { Title: String(n.titulo || 'Hoja').slice(0, 120), Autor: n.autor, Color: n.color, Contenido: clean(n.html), Orden: n.orden || 0,
   Actividad: JSON.stringify(n.act || []), Retirada: n.retirada ? new Date(n.retirada).toISOString() : null });
 
+// Token de SharePoint (audiencia del tenant, no Graph) para tocar cosas que Graph no puede, como el menú del sitio.
+async function spToken() { return (await G.pca.acquireTokenSilent({ scopes: [`https://${CONFIG.siteHost}/AllSites.Manage`], account: G.account })).accessToken; }
+// Marca una lista para que salga sola en el menú de la izquierda (Quick Launch). Solo lo llaman Ian o Carolyn.
+async function showInQuickLaunch(webPath, title) {
+  const r = await fetch(`https://${CONFIG.siteHost}${webPath}/_api/web/lists/getbytitle('${encodeURIComponent(title)}')`, {
+    method: 'POST', headers: { Authorization: 'Bearer ' + await spToken(), Accept: 'application/json;odata=nometadata', 'Content-Type': 'application/json;odata=nometadata', 'X-HTTP-Method': 'MERGE', 'IF-MATCH': '*' },
+    body: JSON.stringify({ OnQuickLaunch: true }) });
+  if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + (await r.text().catch(() => '')).slice(0, 200));
+}
 const Notas = {
   // Busca la lista «TI Notas»; si no existe y entró Ian o Carolyn, la crea con sus columnas.
   async connect(tiLists) {
@@ -1713,6 +1722,7 @@ const Notas = {
     const have = new Set((await gx('GET', `${G.lp.notas}/columns?$select=name&$top=500`)).value.map(c => c.name));
     if (admin) for (const [n, d] of NOTA_COLS) if (!have.has(n)) { await gxAdmin('POST', `${G.lp.notas}/columns`, { name: n, displayName: n, ...d }); have.add(n); }
     G.cols.notas = have;
+    if (admin) { try { if (!localStorage.getItem('ti-notas-ql')) { await showInQuickLaunch(CONFIG.sites.ti, C.lista); localStorage.setItem('ti-notas-ql', '1'); } } catch (e) { console.warn(`No se pudo agregar «${C.lista}» al menú del sitio`, e); } }
     const miss = NOTA_COLS.map(c => c[0]).filter(n => !have.has(n));
     if (miss.length) G.missing.push(...miss.map(n => `${C.lista} → ${n}`));
   },
