@@ -629,7 +629,7 @@ const CONFIG = {
   proofLibrary: 'Pruebas TI',                          // biblioteca de documentos (sitio TI) donde se guardan las imágenes de pruebas
   // Módulo Notas: cuaderno de TI. Mientras abierto = false, solo lo ven los «probadores» (con selector Colaborador / Admin).
   // Con abierto = true: Jarreth y Kendel escriben en sus hojas; Ian y Carolyn ven el reporte (TI no ve el reporte).
-  notas: { lista: 'TI Notas', abierto: false, probadores: ['Ian'], pausaMin: 5, diasHistorial: 120, diasTexto: 45 },   // diasTexto: cuántos días se guarda el texto tecleado minuto a minuto (para el gráfico ampliado)
+  notas: { lista: 'TI Notas', abierto: true, probadores: ['Ian'], pausaMin: 5, diasHistorial: 120, diasTexto: 45 },   // diasTexto: cuántos días se guarda el texto tecleado minuto a minuto (para el gráfico ampliado)
 
   // Nombres internos de las columnas del sistema de vacaciones (por si algún día cambian allá)
   vacCols: {
@@ -1162,7 +1162,7 @@ function renderHeader() {
 }
 function renderTabs() {
   const n = pendingExts().length;
-  const items = [...CONFIG.it.map(p => [p.key, p.key, `<span class="av">${p.key[0]}</span>`]), ['Proyectos', 'Proyectos', ''], ['Equipo', 'Equipo', '<span class="av">TI</span>'], ['Extensiones', 'Extensiones', ''], ...(canNotas() ? [['Notas', 'Notas', '']] : [])];
+  const items = [...CONFIG.it.map(p => [p.key, p.key, `<span class="av">${p.key[0]}</span>`]), ['Proyectos', 'Proyectos', ''], ['Equipo', 'Equipo', '<span class="av">TI</span>'], ['Extensiones', 'Extensiones', ''], ...(canNotas() ? [['Notas', 'Análisis', '']] : [])];
   $('#tabs').innerHTML = items.map(([k, label, ic]) => `<button class="tab" role="tab" id="tab-${k}" aria-selected="${V.tab === k}">${ic}${label}${k === 'Extensiones' && n ? `<b>${n}</b>` : ''}</button>`).join('');
 }
 
