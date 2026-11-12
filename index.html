@@ -1200,7 +1200,7 @@ function personView0(p) {
         <div class="bar"><i data-bar="${cur.id}" style="width:${pct(cur)}%"></i></div></div>
       <div class="timer"><div class="t ${out ? 'zero' : ''}" data-timer="${cur.id}">${clock(remaining(cur))}</div>
         <div class="why ${!why && !out ? 'run' : ''}" data-why="${cur.id}"><i></i>${out ? 'Esperando respuesta de ' + pp.key : (why ? 'En pausa · ' + esc(why) : 'Corriendo')}</div>
-        ${mine2 && !out ? `<div class="acts"><button class="btn" data-pause="${cur.id}">Pausar</button><button class="btn primary" data-finish="${cur.id}">Finalizar</button></div>` : ''}</div>
+        ${mine2 && !out ? `<div class="acts"><button class="btn primary" data-finish="${cur.id}">Finalizar</button></div>` : ''}</div>
     </section>`;
   } else {
     h += `<section class="now-card idle"><div><span class="eyebrow">Sin tarea en curso</span><h2>${pp.key} no tiene ninguna tarea corriendo</h2>
