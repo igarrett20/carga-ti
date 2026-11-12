@@ -1775,12 +1775,14 @@ const misHojas = () => S.notas.filter(n => n.autor === myMail() && !n.retirada).
 function notasView() {
   if (!G.lp.notas) return `<div class="empty-big"><b>El espacio no está disponible</b>${esc(NT.err || 'Todavía se está conectando con SharePoint.')}</div>`;
   if (V.me.role !== 'appr') return notasColab();   // Jarreth y Kendel: solo su cuaderno
-  const test = NT.adminView === 'test';
+  // En «Vista prueba» se ve el espacio igual que Jarreth y Kendel, sin botones (para tomar fotos).
+  // Para volver al reporte: salga del módulo y vuelva a entrar.
+  if (NT.adminView === 'test') return notasColab();
   const toggle = `<div class="nmode"><div class="seg" role="radiogroup" aria-label="Vista">
-    <button role="radio" aria-checked="${!test}" data-aview="report">Reporte</button>
-    <button role="radio" aria-checked="${test}" data-aview="test">Vista prueba</button></div>
-    <p class="small muted">${test ? 'Está viendo el espacio tal como lo ven Jarreth y Kendel. Lo que escriba aquí es suyo (no sale en el reporte).' : 'Actividad de Jarreth y Kendel.'}</p></div>`;
-  return toggle + (test ? notasColab() : notasAdmin());
+    <button role="radio" aria-checked="true" data-aview="report">Reporte</button>
+    <button role="radio" aria-checked="false" data-aview="test">Vista prueba</button></div>
+    <p class="small muted">Actividad de Jarreth y Kendel. «Vista prueba» muestra el espacio como lo ven ellos (para explicarles o tomar fotos); para salir de esa vista, cambie de pestaña y vuelva a entrar.</p></div>`;
+  return toggle + notasAdmin();
 }
 function notasColab() {
   const mine = misHojas();
@@ -1991,7 +1993,7 @@ document.addEventListener('change', async e => {
 });
 document.addEventListener('click', async e => {
   const c = s => e.target.closest(s);
-  if (c('.tab') && NT.dirty.size) Notas.flush();
+  if (c('.tab')) { if (NT.dirty.size) Notas.flush(); NT.adminView = 'report'; }
   if (V.tab !== 'Notas' || !canNotas()) return;
   const av = c('[data-aview]'); if (av) { await Notas.flush(); NT.adminView = av.dataset.aview; render(); if (NT.adminView !== 'test') notasRefresh(); return; }
   const cm = c('[data-cmd]'); if (cm) { const ed = document.getElementById('ned'); if (!ed) return; if (!ed.contains(document.activeElement) && document.activeElement !== ed) ed.focus();
