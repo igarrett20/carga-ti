@@ -629,7 +629,7 @@ const CONFIG = {
   proofLibrary: 'Pruebas TI',                          // biblioteca de documentos (sitio TI) donde se guardan las imágenes de pruebas
   // Módulo Notas: cuaderno de TI. Mientras abierto = false, solo lo ven los «probadores» (con selector Colaborador / Admin).
   // Con abierto = true: Jarreth y Kendel escriben en sus hojas; Ian y Carolyn ven el reporte (TI no ve el reporte).
-  notas: { lista: 'TI Notas', abierto: true, probadores: ['Ian'], pausaMin: 5, diasHistorial: 120, diasTexto: 45 },   // diasTexto: cuántos días se guarda el texto tecleado minuto a minuto (para el gráfico ampliado)
+  notas: { lista: 'TI Notas', abierto: true, probadores: [], pausaMin: 5, diasHistorial: 120, diasTexto: 45 },   // diasTexto: cuántos días se guarda el texto tecleado minuto a minuto (para el gráfico ampliado)
 
   // Nombres internos de las columnas del sistema de vacaciones (por si algún día cambian allá)
   vacCols: {
@@ -1673,7 +1673,7 @@ const myMail = () => G.me ? lc(G.me.mail || G.me.userPrincipalName) : '';
 const nameOf = m => ([...CONFIG.it, ...CONFIG.approvers].find(p => lc(p.email) === lc(m)) || {}).name || m;
 const notaTester = () => !!V.me && !CONFIG.notas.abierto && CONFIG.notas.probadores.includes(V.me.key);
 const canNotas = () => !!V.me && (CONFIG.notas.probadores.includes(V.me.key) || (CONFIG.notas.abierto && (V.me.role === 'it' || V.me.role === 'appr')));
-const notaMode = () => notaTester() ? NT.mode : (V.me.role === 'appr' ? 'admin' : 'colab');
+const notaMode = () => (V.me.role === 'appr' && NT.adminView !== 'test') ? 'admin' : 'colab';
 const wcount = s => (String(s || '').trim().match(/\S+/g) || []).length;
 const fmtN = x => Math.round(x).toLocaleString('es-CR');
 const actMin = s => (s.b || []).filter(x => x > 0).length;
@@ -1773,11 +1773,14 @@ async function notasRefresh(msg) {
 /* ---------- Vistas ---------- */
 const misHojas = () => S.notas.filter(n => n.autor === myMail() && !n.retirada).sort((a, b) => a.orden - b.orden || a.id - b.id);
 function notasView() {
-  const top = notaTester() ? `<div class="nmode"><div class="seg" role="radiogroup" aria-label="Vista de prueba">${[['colab', 'Colaborador (prueba)'], ['admin', 'Admin (prueba)']]
-    .map(([k, l]) => `<button role="radio" aria-checked="${NT.mode === k}" data-nmode="${k}">${l}</button>`).join('')}</div>
-    <p class="small muted">Modo de prueba: solo usted ve este módulo. En «Colaborador» escribe como ${esc(V.me.name)} y sus hojas salen en el reporte con su nombre.</p></div>` : '';
-  if (!G.lp.notas) return top + `<div class="empty-big"><b>Las notas no están disponibles</b>${esc(NT.err || 'Todavía se está conectando con SharePoint.')}</div>`;
-  return top + (notaMode() === 'admin' ? notasAdmin() : notasColab());
+  if (!G.lp.notas) return `<div class="empty-big"><b>El espacio no está disponible</b>${esc(NT.err || 'Todavía se está conectando con SharePoint.')}</div>`;
+  if (V.me.role !== 'appr') return notasColab();   // Jarreth y Kendel: solo su cuaderno
+  const test = NT.adminView === 'test';
+  const toggle = `<div class="nmode"><div class="seg" role="radiogroup" aria-label="Vista">
+    <button role="radio" aria-checked="${!test}" data-aview="report">Reporte</button>
+    <button role="radio" aria-checked="${test}" data-aview="test">Vista prueba</button></div>
+    <p class="small muted">${test ? 'Está viendo el espacio tal como lo ven Jarreth y Kendel. Lo que escriba aquí es suyo (no sale en el reporte).' : 'Actividad de Jarreth y Kendel.'}</p></div>`;
+  return toggle + (test ? notasColab() : notasAdmin());
 }
 function notasColab() {
   const mine = misHojas();
@@ -1802,11 +1805,11 @@ function notasColab() {
 function notasAdmin() {
   const now = Date.now(), today = K(new Date(now)), dayOf = ms => K(new Date(ms));
   if (!NT.day) NT.day = today;
-  const people = [...new Set([...CONFIG.it.map(p => lc(p.email)), ...S.notas.map(n => n.autor)])];
+  const people = CONFIG.it.map(p => lc(p.email));
   if (!people.includes(NT.per)) NT.per = people[0];
   const lastOf = p => S.notas.filter(n => n.autor === p).flatMap(n => n.act.map(s => ({ e: s.e, n }))).sort((a, b) => b.e - a.e)[0];
   const live = p => { const l = lastOf(p); return l && now - l.e < 2 * 60e3 ? l : null; };
-  const chips = `<div class="chips" style="margin-bottom:16px">${people.map(p => `<button class="chip" data-nper="${esc(p)}" aria-pressed="${p === NT.per}">${live(p) ? '<span class="ndot" title="Escribiendo ahora"></span>' : ''}${esc(nameOf(p))}${approverBy(p) ? ' (prueba)' : ''}</button>`).join('')}</div>`;
+  const chips = `<div class="chips" style="margin-bottom:16px">${people.map(p => `<button class="chip" data-nper="${esc(p)}" aria-pressed="${p === NT.per}">${live(p) ? '<span class="ndot" title="Escribiendo ahora"></span>' : ''}${esc(nameOf(p))}</button>`).join('')}</div>`;
   const name = nameOf(NT.per);
   const hojas = S.notas.filter(n => n.autor === NT.per).sort((a, b) => (!!a.retirada - !!b.retirada) || a.orden - b.orden || a.id - b.id);
   const ses = hojas.flatMap(n => n.act.map(s => ({ ...s, n })));
@@ -1990,7 +1993,7 @@ document.addEventListener('click', async e => {
   const c = s => e.target.closest(s);
   if (c('.tab') && NT.dirty.size) Notas.flush();
   if (V.tab !== 'Notas' || !canNotas()) return;
-  const md = c('[data-nmode]'); if (md) { await Notas.flush(); NT.mode = md.dataset.nmode; render(); if (NT.mode === 'admin') notasRefresh(); return; }
+  const av = c('[data-aview]'); if (av) { await Notas.flush(); NT.adminView = av.dataset.aview; render(); if (NT.adminView !== 'test') notasRefresh(); return; }
   const cm = c('[data-cmd]'); if (cm) { const ed = document.getElementById('ned'); if (!ed) return; if (!ed.contains(document.activeElement) && document.activeElement !== ed) ed.focus();
     document.execCommand('styleWithCSS', false, true); document.execCommand(cm.dataset.cmd, false, cm.dataset.val || null); return; }
   const nh = c('[data-nh]'); if (nh) { await Notas.flush(); NT.sel = +nh.dataset.nh; render(); return; }
