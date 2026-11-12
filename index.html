@@ -736,6 +736,14 @@ function blocksOn(p, k) {          // lo que ocupa a la persona ese día: reunio
     else out.push({ s: v.s, e: v.e, kind: 'vac', title: v.label || 'Permiso' });
   });
   S.meet.filter(m => m.who === p && m.k === k).forEach(m => out.push({ s: m.s, e: m.e, kind: 'teams', title: m.title }));
+  // Mientras escribe en Análisis (notas), el reloj de la tarea se detiene: ese rato no cuenta.
+  const pe = person(p);
+  if (pe && S.notas) { const em = lc(pe.email);
+    S.notas.filter(x => lc(x.autor) === em).forEach(x => (x.act || []).forEach(se => {
+      if (K(new Date(se.s)) !== k) return;
+      const a = hOf(se.s).h, b = hOf(se.e).h;   // solo lo tecleado (primera a última tecla); al dejar de escribir la tarea se reanuda al instante
+      if (b > a + 1e-6) out.push({ s: a, e: b, kind: 'notas', title: 'Escribiendo en Análisis' });
+    })); }
   return out.sort((a, b) => a.s - b.s);
 }
 function freeOn(p, k, cutNow = true) {
@@ -759,10 +767,13 @@ function workBetween(p, fromMs, toMs) {          // horas laborales libres entre
   }
   return tot;
 }
+const writingNow = p => { const pe = person(p); if (!pe || !S.notas) return false; const em = lc(pe.email), g = 60e3, t = nowMs();
+  return S.notas.some(x => lc(x.autor) === em && (x.act || []).some(se => t - se.e >= 0 && t - se.e < g)); };
 function whyPaused(p) {                         // por qué el reloj no corre ahora mismo
   const n = NOW();
   if (S.hol[n.k] && !isWk(n.k)) return `Feriado: ${S.hol[n.k]}`;
   if (isWk(n.k)) return 'Fin de semana';
+  if (writingNow(p)) return 'Escribiendo en Análisis';
   const b = blocksOn(p, n.k).find(x => n.h >= x.s && n.h < x.e);
   if (b) return b.kind === 'teams' ? `En reunión: ${b.title}` : b.title;
   const j = jor(n.k);
@@ -1275,7 +1286,7 @@ function weekGrid(p, pl) {
     if (k === n.k && n.h > top && n.h < 17) c += `<div class="now" style="top:${y(n.h)}px" aria-label="Hora actual"></div>`;
     blocksOn(p, k).forEach(b => { const a = Math.max(j.in, b.s), e = Math.min(j.out, b.e); if (e <= a) return;
       if (b.kind === 'vac' && a < j.l0 && e > j.l1) { c += blk(b, a, j.l0, 'busy vac', '', 'Ausente', b.title) + blk(b, j.l1, e, 'busy vac', '', 'Ausente', b.title); return; }
-      c += blk(b, a, e, `busy ${b.kind}`, '', b.kind === 'teams' ? 'Teams' : 'Ausente', b.title); });
+      c += blk(b, a, e, `busy ${b.kind}`, '', b.kind === 'teams' ? 'Teams' : b.kind === 'notas' ? 'Análisis' : 'Ausente', b.title); });
     wkSegs.filter(s => s.k === k).forEach(s => { c += blk(s, s.s, s.e, `blk prio${s.t.prio} ${s.t.status === 'En curso' ? 'run' : ''}`, `data-id="${s.t.id}"`, tid(s.t), s.t.title, s.t.status === 'En curso' ? '<span class="live">EN CURSO</span>' : ''); });
     return c + '</div>';
   }).join('');
